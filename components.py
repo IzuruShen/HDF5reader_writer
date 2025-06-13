@@ -19,7 +19,7 @@ class DataTransformer:
     def __init__(self, hdf5_reader):
         self.reader = hdf5_reader  # 组合主类实例
 
-    def to_dataframe(self, include_attrs=False):
+    def to_dataframe(self, include_attrs: boool =False) -> pd.DataFrame:
         """
         将整个HDF5文件转为DataFrame,使用三维坐标索引 (time, lat, lon)
         
@@ -51,7 +51,7 @@ class DataTransformer:
         df = pd.DataFrame(data_dict, index=index)
         return (df, attrs_dict) if include_attrs else df
 
-    def variable_to_series(self, var_name):
+    def variable_to_series(self, var_name: str) -> pd.Series:
         """将单个变量转为Series"""
         data = self.reader.get_variable_data(var_name)
         if data.shape != (len(time), len(lats), len(lons)):
@@ -187,10 +187,10 @@ class Logger:
         
 # ---------------------- 数据处理组件 ----------------------
 class DataPreprocessor:
-    """数据清洗组件（依赖DataTransformer和Logger）"""
-    def __init__(self, transformer: DataTransformer, 
+    """数据清洗组件（依赖HDF5reader_writer, DataTransformer和Logger）"""
+    def __init__(self,  hdf5_reader, transformer: DataTransformer, 
                  logger: Optional[Logger] = None):
-        self.reader = hdf5_reader
+        self.reader =  hdf5_reader
         self.transformer = transformer
         self.logger = logger
 
@@ -238,7 +238,7 @@ class DataPreprocessor:
                 self._log_operation(
                     operation=operation,
                     status="SUCCESS", 
-                    message=f"Clean timestamps: {len(cleaned)}"
+                    message=f"Clean timestamps: {len(time_converted)}"
                 )
                 return time_converted
             warning_msg = f"Found {nat_count} invalid timestamps (NaT) in '{time_name}'"
@@ -268,7 +268,124 @@ class DataPreprocessor:
                 message=str(e)
             )
             raise
+    def __base_cleaner(self, 
+                     data_name: str,
+                     min_threshold = None,
+                     max_threshold = None,
+                     drop_nat: bool = False,
+                     fill_nat: bool = False,
+                     fill_method: str = 'linear',
+                     fill_limit: int = 2,
+                     raise_errors: bool = False,
+                     data_type: str = "") -> pd.Series:
+        """
+        通用数据清洗模板方法
+        
+        参数:
+            data_name: 数据集变量名
+            min_threshold: 最小值阈值（小于此值视为无效）
+            max_threshold: 最大值阈值（大于此值视为无效）
+            drop_nat: 是否删除无效值（与fill_nat互斥）
+            fill_nat: 是否填充无效值（与drop_nat互斥）
+            fill_method: 填充方法（'linear', 'nearest', 'spline'等），若要全填0请输入"fill_zero"
+            fill_limit: 最大连续填充数量
+            raise_errors: 是否对无效值抛出异常
+            data_type: 数据类型标识（用于日志记录）
+        
+        返回:
+            清洗后的pd.Series
+        """
+        operation = f"{data_type.title()} cleaning" if data_type else "Data cleaning"
+        self._log_operation(
+            operation=operation,
+            status="STARTED",
+            message=f"Variable: {data_name}, "
+                   f"Thresholds: [{min_threshold}, {max_threshold}], "
+                   f"Fill: {fill_method if fill_nat else 'None'}"
+        )
+
+        # 参数校验
+        if drop_nat and fill_nat:
+            error_msg = "Cannot enable both drop_nat and fill_nat simultaneously"
+            self._log_operation(
+                operation=operation,
+                status="FAILED", 
+                message=error_msg
+            )
+            raise ValueError(error_msg)
+
+        try:
+            # 数据获取与转换（需确保reader已注入）
+            raw_data = getattr(self, 'reader').get_variable_data(data_name)
+            series = self.transformer.to_series(raw_data, data_name)
             
+            # 转换为数值类型
+            numeric_series = pd.to_numeric(
+                series, 
+                errors='coerce' if not raise_errors else 'raise'
+            )
+
+            # 阈值检测
+            invalid_mask = pd.Series(False, index=numeric_series.index)
+            if min_threshold is not None:
+                invalid_mask |= (numeric_series < min_threshold)
+            if max_threshold is not None:
+                invalid_mask |= (numeric_series > max_threshold)
+            
+            cleaned = numeric_series.mask(invalid_mask, np.nan)
+            nat_count = invalid_mask.sum()
+
+            # 无无效值情况
+            if nat_count == 0:
+                self._log_operation(
+                    operation=operation, 
+                    status="SUCCESS", 
+                    message="No invalid values found"
+                    )
+                return cleaned
+
+            # 无效值处理
+            warning_msg = f"Found {nat_count} invalid values ({nat_count/len(cleaned):.1%})"
+            if raise_errors:
+                self._log_operation(
+                    operation=operation, 
+                    status="FAILED", 
+                    message=f"{warning_msg} - Raising exception"
+                    )
+                raise ValueError(warning_msg)
+            if drop_nat:
+                result = cleaned.dropna()
+                action = "Dropped"
+            elif fill_nat:
+                if fill_method=="fill_zero":
+                    result = cleaned.fillna(0)
+                    action = "Zero-filled"
+                else:
+                    result = cleaned.interpolate(
+                        method=fill_method, 
+                        limit=fill_limit,
+                        order=3 if fill_method == 'spline' else None
+                    )
+                    action = f"Filled ({fill_method})"
+            else:
+                result = cleaned
+                action = "Kept"
+
+            self._log_operation(
+                operation=operation, 
+                status="WARNING",
+                message=f"{warning_msg} - {action}"
+            )
+            return result
+
+        except Exception as e:
+            self._log_operation(
+                operation=operation, 
+                status="FAILED", 
+                message=str(e)
+                )
+            raise
+        
     def wind_speed_cleaner(self, wind_speed_name: str, wind_speed_threshold = None, 
                            drop_nat: bool = False, fill_nat: bool = False, 
                            fill_method: str = 'linear', fill_limit: int = 2,
@@ -291,74 +408,14 @@ class DataPreprocessor:
         异常:
             ValueError: 当raise_errors=True且存在无效风速数据时
         """        
-        operation="Wind speed cleaning"
-        self._log_operation(
-            operation=operation,
-            status="STARTED", 
-            message=f"Variable: {wind_speed_name}, "
-                    f"threshold={wind_speed_threshold}, drop={drop_nat}, fill={fill_nat}"
+        return self.__base_cleaner(
+            data_name=wind_speed_name,
+            min_threshold=0, max_threshold=wind_speed_threshold,
+            drop_nat=drop_nat, fill_nat=fill_nat,
+            fill_method=fill_method, fill_limit=fill_limit,
+            raise_errors=raise_errors,
+            data_type="wind_speed"
         )
-        if drop_nat and fill_nat:
-            error_msg = "Cannot set both drop_nat and fill_nat to True"
-            self._log_operation(
-                operation=operation,
-                status="FAILED", 
-                message=error_msg
-            )
-            raise  ValueError(error_msg)
-        try:
-            wind_speed_series = self.transformer.to_series(
-                self.reader.get_variable_data(wind_speed_name),
-                wind_speed_name
-            )
-            wind_speed_converted = pd.to_numeric(
-                wind_speed_series,
-                errors='coerce' if not raise_errors else 'raise'
-            )
-            
-            invalid_mask = (wind_speed_converted < 0)
-            if wind_speed_threshold is not None:
-                invalid_mask |= (wind_speed_converted > wind_speed_threshold)
-            wind_speed_converted[invalid_mask] = np.nan
-            
-            nat_count = invalid_mask.sum()
-            if nat_count == 0:
-                self._log_operation(
-                    operation=operation,
-                    status="SUCCESS", 
-                    message=f"Clean timestamps: {len(wind_speed_converted)}"
-                )
-                return wind_speed_converted
-            warning_msg = f"Found {nat_count} invalid wind speed (NaT) in '{wind_speed_name}'"
-            if raise_errors:
-                self._log_operation(
-                    operation=operation,
-                    status="FAILED", 
-                    message=f"{warning_msg} - Raise"
-                )
-                raise ValueError(warning_msg)
-            if drop_nat:
-                cleaned = wind_speed_converted.dropna()
-                action_message = f"{warning_msg} - Droped"
-            elif fill_nat:
-                cleaned = wind_speed_converted.interpolate(method=fill_method, limit=fill_limit)
-                action_message = f"{warning_msg} - Filled"
-            else:
-                cleaned = wind_speed_converted
-                action_message = f"{warning_msg} - Kept"
-            self._log_operation(
-                operation=operation,
-                status="WARNING", 
-                message=action_message
-            )
-            return cleaned
-        except Exception as e:
-            self._log_operation(
-                operation=operation,
-                status="FAILED", 
-                message=str(e)
-            )
-            raise
             
     def temperature_cleaner(self, temperature_name: str, 
                             temperature_min_threshold = None, temperature_max_threshold = None,
@@ -384,78 +441,81 @@ class DataPreprocessor:
         异常:
             ValueError: 当raise_errors=True且存在无效风速数据时
         """        
-        operation="Temperature cleaning"
-        self._log_operation(
-            operation=operation,
-            status="STARTED", 
-            message=f"Variable: {temperature_name}, "
-                    f"threshold={temperature_min_threshold}, {temperature_max_threshold}, drop={drop_nat}, fill={fill_nat}"
+        return self._base_cleaner(
+            data_name=temperature_name,
+            min_threshold=temperature_min_threshold,
+            max_threshold=temperature_max_threshold,
+            drop_nat=drop_nat,
+            fill_nat=fill_nat,
+            fill_method=fill_method,
+            fill_limit=fill_limit,
+            raise_errors=raise_errors,
+            data_type="temperature"
         )
-        if drop_nat and fill_nat:
-            error_msg = "Cannot set both drop_nat and fill_nat to True"
-            self._log_operation(
-                operation=operation,
-                status="FAILED", 
-                message=error_msg
-            )
-            raise  ValueError(error_msg)
-        try:
-            temperature_series = self.transformer.to_series(
-                self.reader.get_variable_data(temperature_name),
-                temperature_name
-            )
-            temperature_converted = pd.to_numeric(
-                temperature_series,
-                errors='coerce' if not raise_errors else 'raise'
-            )
+    
+    def humidity_cleaner(self, humidity_name: str, humidity_threshold = None, 
+                           drop_nat: bool = False, fill_nat: bool = False, 
+                           fill_method: str = 'linear', fill_limit: int = 2,
+                           raise_errors: bool = False) -> pd.Series:
+        """
+        清洗湿度数据，支持异常处理，允许设置最大阈值
+        
+        参数:
+            humidity_name: 湿度变量名
+            humidity_threshold: 湿度最大值阈值，默认None，超过即认为是无效值
+            drop_nat: 是否自动删除无效风速数据，默认False，与fill_nat互斥
+            fill_nat: 是否自动用前后均值插值填充无效风速数据，默认False，与drop_nat互斥
+            fill_method: 填充方法（'linear', 'nearest', 'spline'等）,默认'linear'
+            fill_limit: 最大连续填充数量，默认2
+            raise_errors: 发现无效风速数据时是否抛出异常，默认False
+        
+        返回:
+            清洗后的pd.Series时间序列
             
-            invalid_mask = False
-            if temperature_min_threshold is not None:
-                invalid_mask = (temperature_converted < temperature_min_threshold)
-            if temperature_max_threshold is not None:
-                if invalid_mask is False:
-                    invalid_mask = (temperature_converted > temperature_max_threshold)
-                else:
-                    invalid_mask |= (temperature_converted > temperature_max_threshold)
+        异常:
+            ValueError: 当raise_errors=True且存在无效风速数据时
+        """        
+        return self.__base_cleaner(
+            data_name=humidity_name,
+            min_threshold=0, max_threshold=humidity_threshold,
+            drop_nat=drop_nat, fill_nat=fill_nat,
+            fill_method=fill_method, fill_limit=fill_limit,
+            raise_errors=raise_errors,
+            data_type="humidity"
+        )
+    
+    def precipitation_cleaner(self, precipitation_name: str, precipitation_threshold = None, 
+                           drop_nat: bool = False, fill_nat: bool = False, 
+                           fill_method: str = 'fill_zero', fill_limit: int = 2,
+                           raise_errors: bool = False) -> pd.Series:
+        """
+        清洗风速数据，支持异常处理，允许设置最大阈值
+        
+        参数:
+            humidity_name: 风速变量名
+            humidity_threshold: 风速最大值阈值，默认None，超过即认为是无效值
+            drop_nat: 是否自动删除无效风速数据，默认False，与fill_nat互斥
+            fill_nat: 是否自动用前后均值插值填充无效风速数据，默认False，与drop_nat互斥
+            fill_method: 填充方法（'linear', 'nearest', 'spline'等）,默认'fill_zero'
+            fill_limit: 最大连续填充数量，默认2
+            raise_errors: 发现无效风速数据时是否抛出异常，默认False
+        
+        返回:
+            清洗后的pd.Series时间序列
             
-            # 应用无效掩码，替换为 np.nan
-            temperature_converted[invalid_mask] = np.nan
-            
-            nat_count = invalid_mask.sum()
-            if nat_count == 0:
-                self._log_operation(
-                    operation=operation,
-                    status="SUCCESS", 
-                    message=f"Clean timestamps: {len(temperature_converted)}"
-                )
-                return temperature_converted
-            warning_msg = f"Found {nat_count} invalid temperature (NaT) in '{temperature_name}'"
-            if raise_errors:
-                self._log_operation(
-                    operation=operation,
-                    status="FAILED", 
-                    message=f"{warning_msg} - Raise"
-                )
-                raise ValueError(warning_msg)
-            if drop_nat:
-                cleaned = temperature_converted.dropna()
-                action_message = f"{warning_msg} - Droped"
-            elif fill_nat:
-                cleaned = temperature_converted.interpolate(method=fill_method, limit=fill_limit)
-                action_message = f"{warning_msg} - Filled"
-            else:
-                cleaned = temperature_converted
-                action_message = f"{warning_msg} - Kept"
-            self._log_operation(
-                operation=operation,
-                status="WARNING", 
-                message=action_message
-            )
-            return cleaned
-        except Exception as e:
-            self._log_operation(
-                operation=operation,
-                status="FAILED", 
-                message=str(e)
-            )
-            raise
+        异常:
+            ValueError: 当raise_errors=True且存在无效风速数据时
+        """        
+        return self.__base_cleaner(
+            data_name=precipitation_name,
+            min_threshold=0, max_threshold=precipitation_threshold,
+            drop_nat=drop_nat, fill_nat=fill_nat,
+            fill_method=fill_method, fill_limit=fill_limit,
+            raise_errors=raise_errors,
+            data_type="precipitation"
+        )
+
+class DataAnalyzer:
+    def __init__(self, reader):
+        self.reader = reader
+        

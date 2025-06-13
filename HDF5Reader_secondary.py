@@ -11,7 +11,8 @@ from datetime import datetime
 import numbers
 import time
 import pandas as pd
-from components import DataTransformer, Converter, Logger
+from typing import Optional, Any, Dict  # 确保所有需要的类型提示都已导入
+from components import DataTransformer, Converter, Logger, DataPreprocessor
 
 class HDF5reader_writer:
     """
@@ -20,13 +21,13 @@ class HDF5reader_writer:
     支持summary_meteorological,读取数据并打印全局属性的部分信息
     请尽可能使用with语句而不是实例化
     """
-    def __init__(self, file_path, enable_logging=True):
+    def __init__(self, file_path: str, enable_logging: bool = True):
         """
         初始化 HDF5Reader 实例，使用组合模式整合各功能模块
         
         参数:
-            file_path(str): HDF5 文件的路径
-            enable_logging(bool): 默认True,是否使用日志 
+            file_path: HDF5 文件的路径
+            enable_logging: 默认True,是否使用日志 
         """
         self.__file_path = file_path
         self.__dataset = None
@@ -35,6 +36,7 @@ class HDF5reader_writer:
         self.pdtransform = DataTransformer(self)         # 数据转换（需传入主类实例）
         self.converter = Converter()                   # 单位转换
         self._logger = Logger() if enable_logging else None  # 可选日志
+        self.datacleaner = DataPreprocessor(self, self.pdtransform, self._logger)
     
     # 辅助方法：简化日志调用
     def _log_operation_if_enabled(self, **kwargs):
@@ -133,14 +135,14 @@ class HDF5reader_writer:
             status="SUCCESS"
         )
     
-    def get_dataset(self, mode='r', group_path=None):
+    def get_dataset(self, mode: str = 'r', group_path: Optional[str] = None):
         """
         获取 HDF5 数据集或指定组
         如果文件尚未打开,则自动调用 open() 打开文件。
         
         参数：
-            mode(str):读入模式,一般默认'r'
-            group_path(str): 可选，如"Observations/Group1"
+            mode:读入模式,一般默认'r'
+            group_path: 可选，如"Observations/Group1"
             
         返回:
             HDF5 数据集对象
@@ -186,15 +188,15 @@ class HDF5reader_writer:
             )
             raise
     
-    def get_variable_data(self, variable_name):
+    def get_variable_data(self, variable_name: str) -> np.ndarray:
         """
         读取 Observations 组中指定变量的数据值
 
         参数:
-            variable_name (str): 目标变量名称
+            variable_name: 目标变量名称
 
         返回:
-            numpy.ndarray: 该变量的数据值
+            该变量的数据值
 
         异常:
             ValueError: 如果指定变量不存在于数据集中
@@ -222,7 +224,7 @@ class HDF5reader_writer:
                 status="SUCCESS"
             )
     
-    def get_global_attributes(self):
+    def get_global_attributes(self) -> Dict[str, Any]:
         """
         读取 HDF5 文件的全局属性，并以字典形式返回。
         
@@ -251,15 +253,15 @@ class HDF5reader_writer:
             )
             raise
     
-    def get_local_attributes(self, dataset_name):
+    def get_local_attributes(self, dataset_name: str) -> dict:
         """
         读取 Observations 组中指定数据集的局部属性，并以字典形式返回。
         
         参数:
-            dataset_name (str): 要读取属性的数据集名称。
+            dataset_name: 要读取属性的数据集名称。
         
         返回:
-            dict: 包含该数据集局部属性的字典。
+            包含该数据集局部属性的字典。
         
         异常:
             ValueError: 当指定的数据集不存在于 Observations 组中时抛出异常。
@@ -294,7 +296,6 @@ class HDF5reader_writer:
     def summary_meteorological(self):
         """
         读取 HDF5 文件中的气象数据，并打印全局属性的部分信息。
-    
         """
         operation="summary"
         self._log_operation_if_enabled(
@@ -323,10 +324,10 @@ class HDF5reader_writer:
             raise
     
     # 气象数据操作方法
-    def write_meteo_hdf5(self, time_points, lat_points, lon_points, 
+    def write_meteo_hdf5(self, time_points: int, lat_points: int, lon_points: int, 
                          lat_min=-90, lat_max=90, lon_min=-180, lon_max=180,
                          time_values=None,
-                         dic_data=None):
+                         dic_data: Optional[Dict[str, Dict[str, Any]]] =None):
         """
         创建一个 HDF5 文件或完全覆盖之前的文件，并写入数据
         所有变量均包含 units 和 description 属性。
@@ -518,10 +519,10 @@ class HDF5reader_writer:
             )
             raise
     
-    def append_meteo_hdf5(self, time_points, lat_points, lon_points,
+    def append_meteo_hdf5(self, time_points: int, lat_points: int, lon_points: int,
                           lat_min=-90, lat_max=90, lon_min=-180, lon_max=180, 
                           time_values=None, 
-                          dic_data=None):
+                          dic_data: Optional[Dict[str, Dict[str, Any]]] =None):
         """
         在一个已有的 HDF5 文件之上追加 Observations 内的数据，或创建一个 HDF5 文件并写入数据
         所有变量均包含 units 和 description 属性。
