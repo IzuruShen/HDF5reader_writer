@@ -673,7 +673,7 @@ class DataAnalyzer:
                 exception=e
             )
             raise
-            
+    # -------------------- 统计方法 --------------------        
     def __calculate_statistic(self, variable_name: str, 
                        stat_func: Union[str, Callable],
                        stat_name: str,
@@ -685,7 +685,7 @@ class DataAnalyzer:
         统计计算核心方法（内部使用）
         
         参数:
-            variable_names: 变量名列表
+            variable_name: 变量名称
             stat_func: 统计函数名(str)或可调用对象
             stat_name: 用于日志记录的统计量名称
             time_slice: 时间维度切片
@@ -812,7 +812,7 @@ class DataAnalyzer:
                 time_slice: slice = None,
                 lat_slice: slice = None,
                 lon_slice: slice = None) -> float:
-        """获取最大值"""
+        """获取中位数"""
         return self.__calculate_statistic(
             variable_name=variable_name,
             stat_func='median',
@@ -826,7 +826,7 @@ class DataAnalyzer:
                 time_slice: slice = None,
                 lat_slice: slice = None,
                 lon_slice: slice = None) -> float:
-        """获取最大值"""
+        """获取和"""
         return self.__calculate_statistic(
             variable_name=variable_name,
             stat_func='sum',
@@ -877,7 +877,255 @@ class DataAnalyzer:
                 lon_slice=lon_slice,
                 **kwargs
             )
-        return results    
+        return results
+    
+    # -------------------- 滑动窗口 --------------------
+    def __rolling_window(self, variable_name: str,
+                     window_size: int,
+                     stat_func: Union[str, Callable] = 'mean',
+                     stat_name: str = 'mean',
+                     time_axis: bool = True,
+                     time_slice: slice = None,
+                     lat_slice: slice = None,
+                     lon_slice: slice = None,
+                     **kwargs) -> pd.DataFrame:
+        """
+        滑动窗口计算
+        
+        参数:
+            variable_name: 变量名称
+            window_size: 窗口大小
+            stat_func: 统计函数('mean'/'std'等)或可调用对象
+            stat_name: 用于日志记录的统计量名称
+            time_axis: 是否沿时间维度滑动(False则为空间维度)
+            time_slice: 时间维度切片
+            lat_slice: 纬度维度切片
+            lon_slice: 经度维度切片
+            kwargs: 传递给统计函数的额外参数
+            
+        返回:
+            滑动窗口计算结果(DataFrame)
+        """
+        operation = f"Rolling {stat_name} window ({window_size}) on {variable_name}"
+        self._log_operation(
+            operation=operation,
+            status="STARTED",
+            message=f"Axis: {'time' if time_axis else 'space'}, Function: {stat_func}"
+        )
+        
+        try:
+            df = self.get_variable_slice(variable_name, time_slice, lat_slice, lon_slice)
+            
+            if time_axis:
+                # 时间维度滑动
+                rolled = df.groupby(['lat', 'lon'])[variable_name].rolling(window=window_size, min_periods=1)
+            else:
+                # 空间维度滑动(示例：3x3空间窗口)需要更复杂的实现，可能使用xarray
+                pass
+                
+            if isinstance(stat_func, str):
+                if stat_func == 'quantile':
+                    result = rolled.quantile(kwargs.get('q')).iloc[0]
+                else:
+                    result = getattr(rolled, stat_func)()
+
+                result = getattr(rolled, stat_func)()#调用方法
+            else:
+                result = rolled.apply(stat_func, **kwargs)
+            
+            self._log_operation(
+                operation=operation,
+                status="SUCCESS",
+                message=f"Result shape: {result.shape}"
+            )
+            return result.unstack(level=[0,1]) if time_axis else result
+            
+        except Exception as e:
+            self._log_operation(
+                operation=operation,
+                status="FAILED",
+                message=f"Error: {str(e)}",
+                exception=e
+            )
+            raise
+            
+    def rolling_quantile(self, variable_name: str, 
+                         window_size: int, 
+                         time_axis: bool = True, 
+                         quantile: float = 0.25, 
+                         **kwargs) -> pd.DataFrame:
+        """
+        滑动分位数
+        
+        **kwargs可选:
+            time_slice: 时间维度切片
+            lat_slice: 纬度维度切片
+            lon_slice: 经度维度切片
+        """
+        if not 0 <= quantile <= 1:
+            error_msg = f"Quantile must be between 0 and 1, got {quantile}"
+            self._log_operation(
+                operation=f"Get {quantile*100}% quantile: {variable_name}",
+                status="FAILED",
+                message=error_msg
+            )
+            raise ValueError(error_msg)
+        return self.__rolling_window(
+            variable_name=variable_name,
+            window_size=window_size,
+            stat_func='quantile',
+            stat_name=f"{quantile*100}% quantile",
+            time_axis=time_axis,
+            **kwargs
+        )
+    
+    def rolling_mean(self, variable_name: str, 
+                     window_size: int, 
+                     time_axis: bool = True, 
+                     **kwargs) -> pd.DataFrame:
+        """
+        滑动平均
+        
+        **kwargs可选:
+            time_slice: 时间维度切片
+            lat_slice: 纬度维度切片
+            lon_slice: 经度维度切片
+        """
+        return self.__rolling_window(
+            variable_name=variable_name,
+            window_size=window_size,
+            time_axis=time_axis,
+            **kwargs
+        )
+    
+    def rolling_std_deviation(self, variable_name: str, 
+                              window_size: int, 
+                              time_axis: bool = True, 
+                              **kwargs) -> pd.DataFrame:
+        """
+        滑动标准差
+        
+        **kwargs可选:
+            time_slice: 时间维度切片
+            lat_slice: 纬度维度切片
+            lon_slice: 经度维度切片
+        """
+        return self.__rolling_window(
+            variable_name=variable_name,
+            window_size=window_size,
+            stat_func='std',
+            stat_name='standard deviation',
+            time_axis=time_axis,
+            **kwargs
+        )
+    
+    def rolling_min(self, variable_name: str,
+                  window_size: int,
+                  time_axis: bool = True,
+                  **kwargs) -> pd.DataFrame:
+        """
+        滑动最小值
+        
+        **kwargs可选:
+            time_slice: 时间维度切片
+            lat_slice: 纬度维度切片
+            lon_slice: 经度维度切片
+        """
+        return self.__rolling_window(
+            variable_name=variable_name,
+            window_size=window_size,
+            stat_func='min',
+            stat_name='minimum',
+            time_axis=time_axis,
+            **kwargs
+        )
+    
+    def rolling_max(self, variable_name: str,
+                  window_size: int,
+                  time_axis: bool = True,
+                  **kwargs) -> pd.DataFrame:
+        """
+        滑动最大值
+        
+        **kwargs可选:
+            time_slice: 时间维度切片
+            lat_slice: 纬度维度切片
+            lon_slice: 经度维度切片
+        """
+        return self.__rolling_window(
+            variable_name=variable_name,
+            window_size=window_size,
+            stat_func='max',
+            stat_name='maximum',
+            time_axis=time_axis,
+            **kwargs
+        )
+    
+    def rolling_median(self, variable_name: str,
+                  window_size: int,
+                  time_axis: bool = True,
+                  **kwargs) -> pd.DataFrame:
+        """
+        滑动中位数
+        
+        **kwargs可选:
+            time_slice: 时间维度切片
+            lat_slice: 纬度维度切片
+            lon_slice: 经度维度切片
+        """
+        return self.__rolling_window(
+            variable_name=variable_name,
+            window_size=window_size,
+            stat_func='median',
+            stat_name='median',
+            time_axis=time_axis,
+            **kwargs
+        )
+    
+    def rolling_sum(self, variable_name: str,
+                  window_size: int,
+                  time_axis: bool = True,
+                  **kwargs) -> pd.DataFrame:
+        """
+        滑动和
+        
+        **kwargs可选:
+            time_slice: 时间维度切片
+            lat_slice: 纬度维度切片
+            lon_slice: 经度维度切片
+        """
+        return self.__rolling_window(
+            variable_name=variable_name,
+            window_size=window_size,
+            stat_func='sum',
+            stat_name='sum',
+            time_axis=time_axis,
+            **kwargs
+        )
+    
+    def custom_stat(self, variable_name: str,
+                  window_size: int,
+                  stat_func: Callable,
+                  stat_name: str,
+                  time_axis: bool = True,
+                  **kwargs) -> pd.DataFrame:
+        """
+        滑动自定义
+        
+        **kwargs可选:
+            time_slice: 时间维度切片
+            lat_slice: 纬度维度切片
+            lon_slice: 经度维度切片
+            传递给统计函数的额外参数
+        """
+        return self.__rolling_window(
+            variable_name=variable_name,
+            window_size=window_size,
+            stat_func=stat_func,
+            stat_name=stat_name,
+            time_axis=time_axis,
+            **kwargs
+        )
 
 # ---------------------- 时间重采样组件 ----------------------
 class TimeResampler:

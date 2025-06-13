@@ -10,7 +10,7 @@ import numpy as np
 from datetime import datetime
 import time
 import pandas as pd
-from typing import Optional, Any, Dict  # 确保所有需要的类型提示都已导入
+from typing import Optional, Union, Dict, List, Any, Callable  # 确保所有需要的类型提示都已导入
 from components import DataTransformer, Converter, Logger, DataPreprocessor
 
 class HDF5reader_writer:
@@ -36,6 +36,8 @@ class HDF5reader_writer:
         self._logger = Logger() if enable_logging else None  # 可选日志
         self.pdtransform = DataTransformer(self)         # 数据转换（需传入主类实例）
         self.datacleaner = DataPreprocessor(self)
+        self.dataanalyzer = DataAnalyzer(self)
+        self.timeresampler = TimeResampler(self)
     
     # 辅助方法：简化日志调用
     def _log_operation_if_enabled(self, **kwargs):
