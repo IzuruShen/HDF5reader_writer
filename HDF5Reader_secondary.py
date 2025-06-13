@@ -106,7 +106,7 @@ class HDF5reader_writer:
     def __enter__(self):
         """with语句内确保文件可以打开"""
         try:
-            self.__opennc('r')  # 打开文件
+            self.__openhdf5('r')  # 打开文件
             return self         # 返回实例自身，供 with 块使用
         except Exception as e:
             raise              # 重新抛出异常
@@ -345,84 +345,178 @@ class HDF5reader_writer:
                     ...
                 }
         """
+        operation="Write meteorological data"
         # 记录操作开始（包含基础参数）
         self._log_operation_if_enabled(
-            operation="Write meteorological data",
+            operation=operation,
             status="STARTED",
-            message=f"Dimensions: time={time_points}, lat={lat_points}, lon={lon_points} | Variables: {list(dic_data.keys()) if dic_data else 'None'}"
+            message=f"File: {self.__file_path}, Dimensions: "\
+                    f"time={time_points},lat={lat_points}, lon={lon_points} | "\
+                    f"Variables: {list(dic_data.keys()) if dic_data else 'None'}"
         )
-
-        if dic_data is None:
-            dic_data = {}
-            self._log_operation_if_enabled(
-                operation="Data validation",
-                status="NOTE",
-                message="No input data dictionary, will create empty file"
-            )
-            
-        # 生成时间数据
-        if time_points is not None:
-            if time_values is None:
-                time_values = np.arange(time_points)  # 默认生成0,1,2,...的时间序列
-            elif len(time_values) != time_points:
-                raise ValueError("time_values length must match time_points")
-                
-        # 生成经纬度数据
-        if not (lat_points > 0 and lon_points > 0):
-            raise ValueError("lat_points and lon_points must be positive")
-        if not (isinstance(lat_points, int) and isinstance(lon_points, int)):
-            raise TypeError("lat_points and lon_points must be integers")
-        if lat_min >= lat_max or lon_min >= lon_max:
-            raise ValueError("lat_min must be < lat_max and lon_min must be < lon_max")
         try:
-            latitudes = np.linspace(lat_min, lat_max, lat_points)
-            longitudes = np.linspace(lon_min, lon_max, lon_points)
-        except TypeError as e:
-            raise TypeError(f"Input must be numeric: {e}")
-        
-        # 打开或创建 HDF5 文件，使用 'w' 模式会覆盖同名文件
-        with h5.File(self.__file_path, 'w') as h5_file:
-            # 写入全局属性
-            h5_file.attrs['CreationDate'] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            h5_file.attrs['DataSource'] = 'Simulated meteorological data'
-            h5_file.attrs['Description'] = f'meteorological data, include {dic_data.keys()}'
-            
-            # 创建组 'Observations' 用于存储观测数据
-            obs_group = h5_file.create_group('Observations')
-            
-            # 创建子组 'Coordinates' 存储时空信息
-            coord_group = obs_group.create_group('Coordinates')
-            coord_group.create_dataset('Time', data=time_values)
-            coord_group.create_dataset('Latitude', data=latitudes)
-            coord_group.create_dataset('Longitude', data=longitudes)
-            
-            # 遍历 dic_data，写入所有变量
-            for var_name, var_info in dic_data.items():
-                if not isinstance(var_info, dict):
-                    raise ValueError(f"Variable '{var_name}' info must be a dictionary")
-                try:
-                    data = var_info["data"]
-                    units = var_info.get("units", "unknown")
-                    description = var_info.get("description", "no description")
+            if dic_data is None:
+                dic_data = {}
+                self._log_operation_if_enabled(
+                    operation="Parameter check",
+                    status="INFO",
+                    message="dic_data is None, initialized as empty dict"
+                )
+                
+            # 生成时间数据
+            if time_points is not None:
+                if time_values is None:
+                    time_values = np.arange(time_points)  # 默认生成0,1,2,...的时间序列
+                    self._log_operation_if_enabled(
+                        operation="Time values generation",
+                        status="NOTE",
+                        message=f"Auto-generated time values (0 to {time_points-1})"
+                    )
+                elif len(time_values) != time_points:
+                    error_msg = "time_values length must match time_points"
+                    self._log_operation_if_enabled(
+                        operation="Parameter validation",
+                        status="FAILED",
+                        message=error_msg
+                    )
+                    raise ValueError(error_msg)
                     
-                    expected_shape_3d = (time_points, lat_points, lon_points)
-    
-                    if data.shape != expected_shape_3d:
-                        raise ValueError(
-                            f"Data shape mismatch for {var_name}: "
-                            f"expected ({lat_points}, {lon_points}), got {data.shape}"
+            # 生成经纬度数据
+            if not (lat_points > 0 and lon_points > 0):
+                error_msg = "lat_points and lon_points must be positive"
+                self._log_operation_if_enabled(
+                    operation="Parameter validation",
+                    status="FAILED",
+                    message=error_msg
+                )
+                raise ValueError(error_msg)
+            if not (isinstance(lat_points, int) and isinstance(lon_points, int)):
+                error_msg = "lat_points and lon_points must be integers"
+                self._log_operation_if_enabled(
+                    operation="Parameter validation",
+                    status="FAILED",
+                    message=error_msg
+                )
+                raise TypeError(error_msg)
+            if lat_min >= lat_max or lon_min >= lon_max:
+                error_msg = "lat_min must be < lat_max and lon_min must be < lon_max"
+                self._log_operation_if_enabled(
+                    operation="Parameter validation",
+                    status="FAILED",
+                    message=error_msg
+                )
+                raise ValueError(error_msg)
+            
+            try:
+                latitudes = np.linspace(lat_min, lat_max, lat_points)
+                longitudes = np.linspace(lon_min, lon_max, lon_points)
+                self._log_operation_if_enabled(
+                    operation="Coordinate generation",
+                    status="SUCCESS",
+                    message=f"Generated {lat_points}x{lon_points} grid"
+                )
+            except TypeError as e:
+                error_msg = f"Input must be numeric: {str(e)}"
+                self._log_operation_if_enabled(
+                    operation="Coordinate generation",
+                    status="FAILED",
+                    message=error_msg
+                )
+                raise TypeError(error_msg)
+            
+            # 打开或创建 HDF5 文件，使用 'w' 模式会覆盖同名文件
+            with h5.File(self.__file_path, 'w') as h5_file:
+                # 写入全局属性
+                h5_file.attrs['CreationDate'] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                h5_file.attrs['DataSource'] = 'Simulated meteorological data'
+                h5_file.attrs['Description'] = f'meteorological data, include {dic_data.keys()}'
+                
+                self._log_operation_if_enabled(
+                    operation="Global attributes",
+                    status="NOTE"
+                )
+                
+                # 创建组 'Observations' 用于存储观测数据
+                obs_group = h5_file.create_group('Observations')
+                # 创建子组 'Coordinates' 存储时空信息
+                coord_group = obs_group.create_group('Coordinates')
+                coord_group.create_dataset('Time', data=time_values)
+                coord_group.create_dataset('Latitude', data=latitudes)
+                coord_group.create_dataset('Longitude', data=longitudes)
+                
+                
+                self._log_operation_if_enabled(
+                    operation="Group structure",
+                    status="NOTE",
+                    message="Created Observations/Coordinates groups"
+                )
+                
+                # 遍历 dic_data，写入所有变量
+                vars_written = []
+                for var_name, var_info in dic_data.items():
+                    if not isinstance(var_info, dict):
+                        error_msg = f"Variable '{var_name}' info must be a dictionary"
+                        self._log_operation_if_enabled(
+                            operation=f"Write variable {var_name}",
+                            status="FAILED",
+                            message=error_msg
                         )
-    
-                    dset = obs_group.create_dataset(var_name, data=data)
-                    dset.attrs["units"] = units
-                    dset.attrs["description"] = description
-                    
-                except KeyError as e:
-                    raise KeyError("Missing required key '{e.args[0]}' in variable '{var_name}'")
-                except (ValueError, TypeError) as e:
-                    raise
-                except Exception as e:
-                    raise 
+                        raise ValueError(error_msg)
+                    try:
+                        data = var_info["data"]
+                        units = var_info.get("units", "unknown")
+                        description = var_info.get("description", "no description")
+                        
+                        expected_shape_3d = (time_points, lat_points, lon_points)
+        
+                        if data.shape != expected_shape_3d:
+                            error_msg = (
+                                f"Data shape mismatch for {var_name}: "
+                                f"expected {expected_shape_3d}, got {data.shape}"
+                            )
+                            self._log_operation_if_enabled(
+                                operation=f"Write variable {var_name}",
+                                status="FAILED",
+                                message=error_msg
+                            )
+                            raise ValueError(error_msg)
+        
+                        dset = obs_group.create_dataset(var_name, data=data)
+                        dset.attrs["units"] = units
+                        dset.attrs["description"] = description
+                        
+                        vars_written.append(var_name)               
+                        self._log_operation_if_enabled(
+                            operation=f"Write variable {var_name}",
+                            status="SUCCESS",
+                            message=f"Shape: {data.shape}, Units: {units}"
+                        )
+                    except KeyError as e:
+                        self._log_operation_if_enabled(
+                            operation=f"Write variable {var_name}",
+                            status="FAILED",
+                            message=f"Missing required key: {str(e)}"
+                        )
+                        raise
+                    except Exception as e:
+                        self._log_operation_if_enabled(
+                            operation=f"Write variable {var_name}",
+                            status="FAILED",
+                            message=str(e)
+                        )
+                        raise
+            self._log_operation_if_enabled(
+                operation="Write meteorological data",
+                status="SUCCESS",
+                message=f"Variables written: {vars_written}"
+            )
+        except Exception as e:
+            self._log_operation_if_enabled(
+                operation="Write meteorological data",
+                status="FAILED",
+                message=str(e)
+            )
+            raise
     
     def append_meteo_hdf5(self, time_points, lat_points, lon_points,
                           lat_min=-90, lat_max=90, lon_min=-180, lon_max=180, 
@@ -446,58 +540,103 @@ class HDF5reader_writer:
                     ...
                 }
         """
-        if self._logger:
-            self._logger.log_operation(
-                operation="write meteo hdf5",
-                status="STARTED",
-                message=f"File: {self.__file_path}"
-            )
+        self._log_operation_if_enabled(
+            operation="Append meteorological data",
+            status="STARTED",
+            message=f"File: {self.__file_path}, Dimensions: "\
+                    f"time={time_points},lat={lat_points}, lon={lon_points} | "\
+                    f"Variables: {list(dic_data.keys()) if dic_data else 'None'}"
+        )
         if dic_data is None:
             dic_data = {} 
-        # 生成时间数据
-        if time_points is not None:
-            if time_values is None:
-                time_values = np.arange(time_points)  # 默认生成0,1,2,...的时间序列
-            elif len(time_values) != time_points:
-                raise ValueError("time_values length must match time_points")
+            self._log_operation_if_enabled(
+                operation="Parameter check",
+                status="NOTE",
+                message="dic_data is None, initialized as empty dict"
+            )
+        try:
+            # 打开或创建 HDF5 文件，使用 'a' 模式
+            with h5.File(self.__file_path, 'a') as h5_file:
+                obs_group = h5_file.require_group('Observations')
+                self._log_operation_if_enabled(
+                    operation="Group access",
+                    status="SUCCESS",
+                    message="Accessed Observations group"
+                )
                 
-        # 生成经纬度数据
-        if not (lat_points > 0 and lon_points > 0):
-            raise ValueError("lat_points and lon_points must be positive")
-        if not (isinstance(lat_points, int) and isinstance(lon_points, int)):
-            raise TypeError("lat_points and lon_points must be integers")
-        if lat_min >= lat_max or lon_min >= lon_max:
-            raise ValueError("lat_min must be < lat_max and lon_min must be < lon_max")
-        # 打开或创建 HDF5 文件，使用 'a' 模式
-        with h5.File(self.__file_path, 'a') as h5_file:
-            obs_group = h5_file.require_group('Observations')
-            # 遍历 dic_data，写入所有变量
-            for var_name, var_info in dic_data.items():
-                if not isinstance(var_info, dict):
-                    raise ValueError(f"Variable '{var_name}' info must be a dictionary")
-                try:
-                    data = var_info["data"]
-                    units = var_info.get("units", "unknown")
-                    description = var_info.get("description", "no description")
-    
-                    expected_shape_3d = (time_points, lat_points, lon_points)
-    
-                    if data.shape != expected_shape_3d:
-                        raise ValueError(
-                            f"Data shape mismatch for {var_name}: "
-                            f"expected ({lat_points}, {lon_points}), got {data.shape}"
+                # 遍历 dic_data，写入所有变量
+                vars_appended = []
+                for var_name, var_info in dic_data.items():
+                    if not isinstance(var_info, dict):
+                        error_msg = f"Variable '{var_name}' info must be a dictionary"
+                        self._log_operation_if_enabled(
+                            operation=f"Append variable {var_name}",
+                            status="FAILED",
+                            message=error_msg
                         )
-    
-                    dset = obs_group.create_dataset(var_name, data=data)
-                    dset.attrs["units"] = units
-                    dset.attrs["description"] = description
-    
-                except KeyError as e:
-                    raise KeyError("Missing required key '{e.args[0]}' in variable '{var_name}'")
-                except (ValueError, TypeError) as e:
-                    raise
-                except Exception as e:
-                    raise 
+                        raise ValueError(error_msg)
+                    
+                    try:  
+                        data = var_info["data"]
+                        units = var_info.get("units", "unknown")
+                        description = var_info.get("description", "no description")
+        
+                        expected_shape_3d = (time_points, lat_points, lon_points)
+        
+                        if data.shape != expected_shape_3d:
+                            error_msg = f"Data shape mismatch for {var_name}: "\
+                                        f"expected ({lat_points}, {lon_points}), got {data.shape}"
+                            self._log_operation_if_enabled(
+                                operation=f"Append variable {var_name}",
+                                status="FAILED",
+                                message=error_msg
+                            )
+                            raise ValueError(error_msg)
+                        
+                        if var_name in obs_group:
+                            del obs_group[var_name]
+                            self._log_operation_if_enabled(
+                                operation=f"Append variable {var_name}",
+                                status="NOTE",
+                                message="Existing dataset deleted before append"
+                            )
+                            
+                        dset = obs_group.create_dataset(var_name, data=data)
+                        dset.attrs["units"] = units
+                        dset.attrs["description"] = description
+                        vars_appended.append(var_name)
+                        
+                        self._log_operation_if_enabled(
+                            operation=f"Append variable {var_name}",
+                            status="SUCCESS",
+                            message=f"Shape: {data.shape}, Units: {units}"
+                        )
+                    except KeyError as e:
+                        self._log_operation_if_enabled(
+                            operation=f"Append variable {var_name}",
+                            status="FAILED",
+                            message=f"Missing required key '{e.args[0]}' in variable '{var_name}'"
+                        )
+                        raise 
+                    except Exception as e:
+                        self._log_operation_if_enabled(
+                            operation=f"Append variable {var_name}",
+                            status="FAILED",
+                            message=str(e)
+                        )
+                        raise 
+            self._log_operation_if_enabled(
+                operation="Append meteorological data",
+                status="SUCCESS",
+                message=f"Variables appended: {vars_appended}"
+            )
+        except Exception as e:
+            self._log_operation_if_enabled(
+                operation="Append meteorological data",
+                status="FAILED",
+                message=str(e)
+            )
+            raise
 
 hdf5_test=HDF5reader_writer("D://test//hdf5_test.h5")
 time_points = 2

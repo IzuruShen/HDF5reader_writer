@@ -14,6 +14,7 @@ from logging.handlers import RotatingFileHandler
 
 # ---------------------- 数据转换组件 ----------------------
 class DataTransformer:
+    """将 HDF5 文件转化成 pandas 格式的数据"""
     def __init__(self, hdf5_reader):
         self.reader = hdf5_reader  # 组合主类实例
 
@@ -67,6 +68,7 @@ class DataTransformer:
     
 # ---------------------- 单位转换组件 ----------------------
 class Converter:
+    """简单静态数据转换"""
     @staticmethod
     def convert_temperature(values, from_unit="K", to_unit="°C"):
         """温度单位转换"""
@@ -180,3 +182,28 @@ class Logger:
         }.get(status, logging.INFO)
         
         self._logger.log(log_level, log_msg)
+        
+# ---------------------- 数据处理组件 ----------------------
+class DataPreprocessor:
+    """数据清洗组件（依赖DataTransformer和Logger）"""
+    def __init__(self, transformer: DataTransformer, logger: Optional[Logger] = None):
+        self.reader = hdf5_reader
+        self.transformer = transformer
+        self.logger = logger
+
+    def _log_operation(self, operation: str, status: str, message: str = ""):
+        if self.logger:
+            self.logger.log_operation(operation, status, message)
+
+    def time_cleaner(self, time_name):
+        print("\n--- 清洗时间戳 ---")
+        try:
+            # infer_datetime_format=True 可以尝试自动推断格式，提高解析速度
+            # errors='coerce' 会将无法解析的日期变成 NaT (Not a Time)
+            time_data_original = self.transformer.variable_to_series(time_name)
+            time_data = pd.to_datetime(time_data_original, infer_datetime_format=True, errors='coerce')
+            # 检查是否有无法解析的日期
+            if time_data.isnull().any():
+                print("警告: Timestamp 列中存在无法解析的日期/时间值 (NaT)。")
+                # 可以选择删除这些行或进一步检查
+                time_data.dropna(subset=['Timestamp'], inplace=True)

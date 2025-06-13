@@ -28,7 +28,7 @@ class HDF5reader_writer:
         self.__file_path = file_path
         self.__dataset = None
 
-    def __opennc(self, mode='r'):
+    def __openhdf5(self, mode='r'):
         """
         打开 HDF5 文件
         参数：
@@ -58,7 +58,7 @@ class HDF5reader_writer:
     def __enter__(self):
         """with语句内确保文件可以打开"""
         try:
-            self.__opennc('r')  # 打开文件
+            self.__openhdf5('r')  # 打开文件
             return self         # 返回实例自身，供 with 块使用
         except Exception as e:
             raise              # 重新抛出异常
@@ -91,7 +91,7 @@ class HDF5reader_writer:
             KeyError: 当 Observations 组不存在时
         """
         if self.__dataset is None:
-            self.__opennc(mode)
+            self.__openhdf5(mode)
         if "Observations" not in self.__dataset:
             raise KeyError("Group 'Observations' not found in the file.")
         return self.__dataset
