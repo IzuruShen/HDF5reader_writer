@@ -8,7 +8,6 @@ Created on Wed Jun 11 20:45:11 2025
 import h5py as h5
 import numpy as np
 from datetime import datetime
-import numbers
 import time
 import pandas as pd
 from typing import Optional, Any, Dict  # 确保所有需要的类型提示都已导入
@@ -33,10 +32,10 @@ class HDF5reader_writer:
         self.__dataset = None
         
         # 组合功能组件
-        self.pdtransform = DataTransformer(self)         # 数据转换（需传入主类实例）
         self.converter = Converter()                   # 单位转换
         self._logger = Logger() if enable_logging else None  # 可选日志
-        self.datacleaner = DataPreprocessor(self, self.pdtransform, self._logger)
+        self.pdtransform = DataTransformer(self)         # 数据转换（需传入主类实例）
+        self.datacleaner = DataPreprocessor(self)
     
     # 辅助方法：简化日志调用
     def _log_operation_if_enabled(self, **kwargs):

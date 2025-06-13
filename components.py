@@ -7,11 +7,10 @@ Created on Wed Jun 11 17:01:56 2025
 
 import pandas as pd
 import numpy as np
-from datetime import datetime
 from scipy.constants import g as g0  # 标准重力加速度
 import logging
 from logging.handlers import RotatingFileHandler
-from typing import Optional, Union, Dict, Callable  # 确保所有需要的类型提示都已导入
+from typing import Optional, Union, Dict, List, Any, Callable  # 确保所有需要的类型提示都已导入
 
 # ---------------------- 数据转换组件 ----------------------
 class DataTransformer:
@@ -19,7 +18,7 @@ class DataTransformer:
     def __init__(self, hdf5_reader):
         self.reader = hdf5_reader  # 组合主类实例
 
-    def to_dataframe(self, include_attrs: boool =False) -> pd.DataFrame:
+    def to_dataframe(self, include_attrs: bool =False) -> pd.DataFrame:
         """
         将整个HDF5文件转为DataFrame,使用三维坐标索引 (time, lat, lon)
         
@@ -53,14 +52,14 @@ class DataTransformer:
 
     def variable_to_series(self, var_name: str) -> pd.Series:
         """将单个变量转为Series"""
-        data = self.reader.get_variable_data(var_name)
-        if data.shape != (len(time), len(lats), len(lons)):
-            raise ValueError(f"变量 {var_name} 的形状 {data.shape} 不符合 (time, lat, lon) 要求")
         obs_group = self.reader.get_dataset("Observations")
         coord_group = obs_group["Coordinates"]
         lats = coord_group["Latitude"][:]
         lons = coord_group["Longitude"][:]
         time = coord_group["Time"][:]
+        data = self.reader.get_variable_data(var_name)
+        if data.shape != (len(time), len(lats), len(lons)):
+            raise ValueError(f"变量 {var_name} 的形状 {data.shape} 不符合 (time, lat, lon) 要求")
         index = pd.MultiIndex.from_product(
             [time, lats, lons],
             names=["time", "lat", "lon"]
@@ -188,15 +187,15 @@ class Logger:
 # ---------------------- 数据处理组件 ----------------------
 class DataPreprocessor:
     """数据清洗组件（依赖HDF5reader_writer, DataTransformer和Logger）"""
-    def __init__(self,  hdf5_reader, transformer: DataTransformer, 
-                 logger: Optional[Logger] = None):
+    def __init__(self,  hdf5_reader):
         self.reader =  hdf5_reader
-        self.transformer = transformer
-        self.logger = logger
+        self.transformer = getattr(hdf5_reader, 'pdtransform')
+        self._logger = getattr(hdf5_reader, '_logger', None)  # 复用主类的日志
 
-    def _log_operation(self, operation: str, status: str, message: str = ""):
-        if self.logger:
-            self.logger.log_operation(operation, status, message)
+    def _log_operation(self, **kwargs):
+        """仅在日志启用时记录操作"""
+        if self._logger is not None:
+            self._logger.log_operation(**kwargs)
 
     def time_cleaner(self, time_name: str, drop_nat: bool = False, 
                      raise_errors: bool = False) -> pd.Series:
@@ -516,6 +515,369 @@ class DataPreprocessor:
         )
 
 class DataAnalyzer:
-    def __init__(self, reader):
-        self.reader = reader
+    def __init__(self, hdf5_reader):
+        """
+        初始化数据分析组件
         
+        参数:
+            hdf5_reader: HDF5reader_writer 实例
+        """
+        self.reader = hdf5_reader
+        self.transformer = getattr(hdf5_reader, 'pdtransform')
+        self._logger = getattr(hdf5_reader, '_logger', None)  # 复用主类的日志
+    
+    def _log_operation(self, **kwargs):
+        """仅在日志启用时记录操作"""
+        if self._logger is not None:
+            self._logger.log_operation(**kwargs)
+    
+    def get_variable_slice(self, variable_name: str, 
+                           time_slice: slice = None, 
+                           lat_slice: slice = None, 
+                           lon_slice: slice = None) -> pd.DataFrame:
+        """
+        读取变量的切片数据
+        
+        参数:
+            variable_name: 变量名称
+            time_slice: 时间维度切片，如 slice(0, 10, 2)
+            lat_slice: 纬度维度切片
+            lon_slice: 经度维度切片
+            
+        返回:
+            numpy.ndarray: 切片后的数据
+            
+        异常:
+            ValueError: 当切片超出范围或变量不存在时
+            KeyError: 当变量不存在时
+        """
+        operation = f"Get variable slice: {variable_name}"
+        self._log_operation(
+            operation=operation,
+            status="STARTED",
+            message=f"Slices - time: {time_slice}, lat: {lat_slice}, lon: {lon_slice}"
+        )
+        
+        try:
+            # 获取完整数据集
+            dataset = self.reader.get_dataset(group_path=f"Observations/{variable_name}")
+            
+            # 获取坐标数据
+            coord_group = self.reader.get_dataset(group_path="Observations/Coordinates")
+            times = coord_group["Time"][:]
+            lats = coord_group["Latitude"][:]
+            lons = coord_group["Longitude"][:]
+            
+            
+            time_idx = time_slice if time_slice else slice(None)
+            lat_idx = lat_slice if lat_slice else slice(None)
+            lon_idx = lon_slice if lon_slice else slice(None)
+            
+            # 获取切片数据
+            data_slice = dataset[time_idx, lat_idx, lon_idx]
+            
+            # 获取对应的坐标切片
+            times_sliced = times[time_idx]
+            lats_sliced = lats[lat_idx]
+            lons_sliced = lons[lon_idx]
+            
+            # 创建MultiIndex
+            index = pd.MultiIndex.from_product(
+                [times_sliced, lats_sliced, lons_sliced],
+                names=["time", "lat", "lon"]
+            )
+            
+            # 创建DataFrame
+            df = pd.DataFrame(
+                data=data_slice.reshape(-1, 1),  # 展平数据
+                index=index,
+                columns=[variable_name]
+            )
+            self._log_operation_if_enabled(
+                operation=operation,
+                status="SUCCESS",
+                message=f"Result shape: {df.shape}"
+            )
+            return df
+            
+        except KeyError as e:
+            error_msg = f"Variable '{variable_name}' does not exist"
+            self._log_operation_if_enabled(
+                operation=operation,
+                status="FAILED",
+                message=error_msg,
+                exception=e
+            )
+            raise KeyError(error_msg) from e
+        except Exception as e:
+            self._log_operation_if_enabled(
+                operation=operation,
+                status="FAILED",
+                message=f"Unexpected error: {str(e)}",
+                exception=e
+            )
+            raise
+    
+    def get_variables_slices(self, variable_names: List[str], 
+                             time_slice: slice = None, 
+                             lat_slice: slice = None, 
+                             lon_slice: slice = None) -> pd.DataFrame:
+        """
+        批量获取多个变量的切片数据
+        
+        参数:
+            variable_names: 变量名列表
+            time_slice: 时间维度切片
+            lat_slice: 纬度维度切片
+            lon_slice: 经度维度切片
+            
+        返回:
+            pd.DataFrame: 包含所有变量切片数据的DataFrame
+        """
+        operation = "Get multiple variables slices"
+        self._log_operation(
+            operation=operation,
+            status="STARTED",
+            message=f"Variables: {variable_names}, "
+                   f"Slices - time: {time_slice}, lat: {lat_slice}, lon: {lon_slice}"
+        )
+        try:
+            dfs = []
+            for var_name in variable_names:
+                self._log_operation(
+                    operation=f"Processing variable: {var_name}",
+                    status="PROGRESS",
+                    message=f"Progress: {len(dfs)+1}/{len(variable_names)}"
+                )
+                df = self.get_variable_slice(var_name, time_slice, lat_slice, lon_slice)
+                dfs.append(df)
+            
+            # 合并所有DataFrame
+            result = pd.concat(dfs, axis=1)
+            
+            # 记录操作成功
+            self._log_operation(
+                operation=operation,
+                status="SUCCESS",
+                message=f"Total shape: {result.shape}, Variables: {list(result.columns)}"
+            )
+            
+            return result       
+        except Exception as e:
+            # 记录操作失败
+            self._log_operation(
+                operation=operation,
+                status="FAILED",
+                message=f"Error: {str(e)}",
+                exception=e
+            )
+            raise
+            
+    def __calculate_statistic(self, variable_name: str, 
+                       stat_func: Union[str, Callable],
+                       stat_name: str,
+                       time_slice: slice = None,
+                       lat_slice: slice = None,
+                       lon_slice: slice = None,
+                       **kwargs) -> Any:
+        """
+        统计计算核心方法（内部使用）
+        
+        参数:
+            variable_names: 变量名列表
+            stat_func: 统计函数名(str)或可调用对象
+            stat_name: 用于日志记录的统计量名称
+            time_slice: 时间维度切片
+            lat_slice: 纬度维度切片
+            lon_slice: 经度维度切片
+            kwargs: 传递给统计函数的额外参数
+        """
+        operation = f"Get {stat_name}: {variable_name}"
+        self._log_operation(
+            operation=operation,
+            status="STARTED",
+            message=f"Slices - time: {time_slice}, lat: {lat_slice}, lon: {lon_slice}"
+        )
+        
+        try:
+            df = self.get_variable_slice(variable_name, time_slice, lat_slice, lon_slice)
+            
+            if isinstance(stat_func, str):
+                if stat_func == 'quantile':
+                    result = df.quantile(kwargs.get('q')).iloc[0]
+                else:
+                    result = getattr(df[variable_name], stat_func)()
+            else:
+                result = stat_func(df[variable_name], **kwargs)
+            
+            # 记录操作成功
+            self._log_operation(
+                operation=operation,
+                status="SUCCESS",
+                message=f"{stat_name} value: {result:.4f}" if isinstance(result, (int, float)) else ""
+            )
+            
+            return result
+            
+        except Exception as e:
+            self._log_operation(
+                operation=operation,
+                status="FAILED",
+                message=f"Error: {str(e)}",
+                exception=e
+            )
+            raise
+            
+    def get_quantile_slice(self, variable_name: str, 
+                          quantile: float = 0.25,
+                          time_slice: slice = None,
+                          lat_slice: slice = None,
+                          lon_slice: slice = None) -> float:
+        """获取指定分位数"""
+        if not 0 <= quantile <= 1:
+            error_msg = f"Quantile must be between 0 and 1, got {quantile}"
+            self._log_operation(
+                operation=f"Get {quantile*100}% quantile: {variable_name}",
+                status="FAILED",
+                message=error_msg
+            )
+            raise ValueError(error_msg)
+        return self.__calculate_statistic(
+            variable_name=variable_name,
+            stat_func='quantile',
+            stat_name=f"{quantile*100}% quantile",
+            time_slice=time_slice,
+            lat_slice=lat_slice,
+            lon_slice=lon_slice,
+            q=quantile
+        )
+    
+    def get_mean(self, variable_name: str,
+                time_slice: slice = None,
+                lat_slice: slice = None,
+                lon_slice: slice = None) -> float:
+        """获取平均值"""
+        return self.__calculate_statistic(
+            variable_name=variable_name,
+            stat_func='mean',
+            stat_name="mean",
+            time_slice=time_slice,
+            lat_slice=lat_slice,
+            lon_slice=lon_slice
+        )
+    
+    def get_std_deviation(self, variable_name: str,
+                         time_slice: slice = None,
+                         lat_slice: slice = None,
+                         lon_slice: slice = None) -> float:
+        """获取标准差"""
+        return self.__calculate_statistic(
+            variable_name=variable_name,
+            stat_func='std',
+            stat_name="standard deviation",
+            time_slice=time_slice,
+            lat_slice=lat_slice,
+            lon_slice=lon_slice
+        )
+
+    def get_min(self, variable_name: str,
+                time_slice: slice = None,
+                lat_slice: slice = None,
+                lon_slice: slice = None) -> float:
+        """获取最小值"""
+        return self.__calculate_statistic(
+            variable_name=variable_name,
+            stat_func='min',
+            stat_name="minimum",
+            time_slice=time_slice,
+            lat_slice=lat_slice,
+            lon_slice=lon_slice
+        )
+    
+    def get_max(self, variable_name: str,
+                time_slice: slice = None,
+                lat_slice: slice = None,
+                lon_slice: slice = None) -> float:
+        """获取最大值"""
+        return self.__calculate_statistic(
+            variable_name=variable_name,
+            stat_func='max',
+            stat_name="maximum",
+            time_slice=time_slice,
+            lat_slice=lat_slice,
+            lon_slice=lon_slice
+        )
+    
+    def get_median(self, variable_name: str,
+                time_slice: slice = None,
+                lat_slice: slice = None,
+                lon_slice: slice = None) -> float:
+        """获取最大值"""
+        return self.__calculate_statistic(
+            variable_name=variable_name,
+            stat_func='median',
+            stat_name="median",
+            time_slice=time_slice,
+            lat_slice=lat_slice,
+            lon_slice=lon_slice
+        )
+    
+    def get_sum(self, variable_name: str,
+                time_slice: slice = None,
+                lat_slice: slice = None,
+                lon_slice: slice = None) -> float:
+        """获取最大值"""
+        return self.__calculate_statistic(
+            variable_name=variable_name,
+            stat_func='sum',
+            stat_name="sum",
+            time_slice=time_slice,
+            lat_slice=lat_slice,
+            lon_slice=lon_slice
+        )
+    
+    def get_custom_stat(self, variable_name: str,
+                       stat_func: Callable,
+                       stat_name: str,
+                       time_slice: slice = None,
+                       lat_slice: slice = None,
+                       lon_slice: slice = None,
+                       **kwargs) -> Any:
+        """自定义统计计算"""
+        return self.__calculate_statistic(
+            variable_name=variable_name,
+            stat_func=stat_func,
+            stat_name=stat_name,
+            time_slice=time_slice,
+            lat_slice=lat_slice,
+            lon_slice=lon_slice,
+            **kwargs
+        )
+    
+    def get_stats(self, variable_name: str,
+                 stats: List[Union[str, Callable]],
+                 time_slice: slice = None,
+                 lat_slice: slice = None,
+                 lon_slice: slice = None,
+                 **kwargs) -> Dict[str, Any]:
+        """批量获取多个统计量"""
+        results = {}
+        for stat in stats:
+            if isinstance(stat, str):
+                stat_name = stat
+            else:
+                stat_name = stat.__name__
+                
+            results[stat_name] = self.__calculate_statistic(
+                variable_name=variable_name,
+                stat_func=stat,
+                stat_name=stat_name,
+                time_slice=time_slice,
+                lat_slice=lat_slice,
+                lon_slice=lon_slice,
+                **kwargs
+            )
+        return results    
+
+class DataResample:
+    
