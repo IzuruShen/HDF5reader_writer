@@ -12,60 +12,6 @@ import logging
 from logging.handlers import RotatingFileHandler
 from typing import Optional, Union, Dict, List, Any, Callable  # 确保所有需要的类型提示都已导入
 
-# ---------------------- 数据转换组件 ----------------------
-class DataTransformer:
-    """将 HDF5 文件转化成 pandas 格式的数据"""
-    def __init__(self, hdf5_reader):
-        self.reader = hdf5_reader  # 组合主类实例
-
-    def to_dataframe(self, include_attrs: bool =False) -> pd.DataFrame:
-        """
-        将整个HDF5文件转为DataFrame,使用三维坐标索引 (time, lat, lon)
-        
-        参数:
-            include_attrs(bool):默认为False,判断是否将 HDF5 文件中指变量的属性提取出来存入字典
-        """
-        data_dict = {}
-        attrs_dict = {} if include_attrs else None
-        
-        obs_group = self.reader.get_dataset("Observations")
-        coord_group = obs_group["Coordinates"]
-        lats = coord_group["Latitude"][:]
-        lons = coord_group["Longitude"][:]
-        time = coord_group["Time"][:]
-        index = pd.MultiIndex.from_product(
-            [time, lats, lons],
-            names=["time", "lat", "lon"]
-        )
-        
-        for var_name in obs_group:
-            if var_name == "Coordinates":
-                continue
-            data = obs_group[var_name][:]
-            if data.shape != (len(time), len(lats), len(lons)):
-                raise ValueError(f"变量 {var_name} 的形状 {data.shape} 不符合 (time, lat, lon) 要求")
-            data_dict[var_name] = data.flatten()
-            if include_attrs:
-                attrs_dict[var_name] = dict(obs_group[var_name].attrs)
-        df = pd.DataFrame(data_dict, index=index)
-        return (df, attrs_dict) if include_attrs else df
-
-    def variable_to_series(self, var_name: str) -> pd.Series:
-        """将单个变量转为Series"""
-        obs_group = self.reader.get_dataset("Observations")
-        coord_group = obs_group["Coordinates"]
-        lats = coord_group["Latitude"][:]
-        lons = coord_group["Longitude"][:]
-        time = coord_group["Time"][:]
-        data = self.reader.get_variable_data(var_name)
-        if data.shape != (len(time), len(lats), len(lons)):
-            raise ValueError(f"变量 {var_name} 的形状 {data.shape} 不符合 (time, lat, lon) 要求")
-        index = pd.MultiIndex.from_product(
-            [time, lats, lons],
-            names=["time", "lat", "lon"]
-        )
-        return pd.Series(data.flatten(), index=index)
-    
 # ---------------------- 单位转换组件 ----------------------
 class Converter:
     """简单静态数据转换"""
@@ -184,6 +130,60 @@ class Logger:
         
         self._logger.log(log_level, log_msg)
         
+# ---------------------- 数据转换组件 ----------------------
+class DataTransformer:
+    """将 HDF5 文件转化成 pandas 格式的数据"""
+    def __init__(self, hdf5_reader):
+        self.reader = hdf5_reader  # 组合主类实例
+
+    def to_dataframe(self, include_attrs: bool =False) -> pd.DataFrame:
+        """
+        将整个HDF5文件转为DataFrame,使用三维坐标索引 (time, lat, lon)
+        
+        参数:
+            include_attrs(bool):默认为False,判断是否将 HDF5 文件中指变量的属性提取出来存入字典
+        """
+        data_dict = {}
+        attrs_dict = {} if include_attrs else None
+        
+        obs_group = self.reader.get_dataset("Observations")
+        coord_group = obs_group["Coordinates"]
+        lats = coord_group["Latitude"][:]
+        lons = coord_group["Longitude"][:]
+        time = coord_group["Time"][:]
+        index = pd.MultiIndex.from_product(
+            [time, lats, lons],
+            names=["time", "lat", "lon"]
+        )
+        
+        for var_name in obs_group:
+            if var_name == "Coordinates":
+                continue
+            data = obs_group[var_name][:]
+            if data.shape != (len(time), len(lats), len(lons)):
+                raise ValueError(f"变量 {var_name} 的形状 {data.shape} 不符合 (time, lat, lon) 要求")
+            data_dict[var_name] = data.flatten()
+            if include_attrs:
+                attrs_dict[var_name] = dict(obs_group[var_name].attrs)
+        df = pd.DataFrame(data_dict, index=index)
+        return (df, attrs_dict) if include_attrs else df
+
+    def variable_to_series(self, var_name: str) -> pd.Series:
+        """将单个变量转为Series"""
+        obs_group = self.reader.get_dataset("Observations")
+        coord_group = obs_group["Coordinates"]
+        lats = coord_group["Latitude"][:]
+        lons = coord_group["Longitude"][:]
+        time = coord_group["Time"][:]
+        data = self.reader.get_variable_data(var_name)
+        if data.shape != (len(time), len(lats), len(lons)):
+            raise ValueError(f"变量 {var_name} 的形状 {data.shape} 不符合 (time, lat, lon) 要求")
+        index = pd.MultiIndex.from_product(
+            [time, lats, lons],
+            names=["time", "lat", "lon"]
+        )
+        return pd.Series(data.flatten(), index=index)
+    
 # ---------------------- 数据处理组件 ----------------------
 class DataPreprocessor:
     """数据清洗组件（依赖HDF5reader_writer, DataTransformer和Logger）"""
@@ -514,6 +514,7 @@ class DataPreprocessor:
             data_type="precipitation"
         )
 
+# ---------------------- 数据分析组件 ----------------------
 class DataAnalyzer:
     def __init__(self, hdf5_reader):
         """
@@ -523,7 +524,7 @@ class DataAnalyzer:
             hdf5_reader: HDF5reader_writer 实例
         """
         self.reader = hdf5_reader
-        self.transformer = getattr(hdf5_reader, 'pdtransform')
+        self.transformer = DataTransformer(hdf5_reader)
         self._logger = getattr(hdf5_reader, '_logger', None)  # 复用主类的日志
     
     def _log_operation(self, **kwargs):
@@ -718,7 +719,6 @@ class DataAnalyzer:
             )
             
             return result
-            
         except Exception as e:
             self._log_operation(
                 operation=operation,
@@ -879,5 +879,142 @@ class DataAnalyzer:
             )
         return results    
 
-class DataResample:
-    
+# ---------------------- 时间重采样组件 ----------------------
+class TimeResampler:
+    def __init__(self, hdf5_reader):
+        """
+        初始化时间重采样组件
+        
+        参数:
+            hdf5_reader: HDF5reader_writer 实例
+        """
+        self.reader = hdf5_reader
+        self._logger = getattr(hdf5_reader, '_logger', None)
+        self.analyzer = DataAnalyzer(hdf5_reader)  # 复用DataAnalyzer的功能
+
+    def _log_operation(self, **kwargs):
+        """仅在日志启用时记录操作"""
+        if self._logger is not None:
+            self._logger.log_operation(**kwargs)
+
+    def resample_time(self, variable_name: str, rule: str, method: str = 'mean', 
+                      lat_slice: slice = None, lon_slice: slice = None, **kwargs) -> pd.DataFrame:
+        """
+        对变量数据进行时间维度重采样
+        
+        参数:
+            variable_name: 变量名称
+            rule: 重采样规则(如'D'按天,'H'按小时,'M'按月)
+            method: 重采样方法('mean', 'sum', 'max', 'min'等或自定义函数)
+            lat_slice: 纬度维度切片
+            lon_slice: 纬度维度切片
+            kwargs: 传递给resample的其他参数
+            
+        返回:
+            pd.DataFrame: 重采样后的数据
+            
+        示例:
+            # 将温度数据按日平均
+            daily_temp = resampler.resample_time("Temperature", 'D')
+        """
+        operation = f"Resample {variable_name} by {rule}"
+        self._log_operation(
+            operation=operation,
+            status="STARTED",
+            message=f"Method: {method}, lat: {lat_slice}, lon: {lon_slice}"
+        )
+        try:
+            df = self.analyzer.get_variable_slice(
+                variable_name,
+                lat_slice=lat_slice,
+                lon_slice=lon_slice
+            )
+            
+            # 重置索引以便重采样
+            df_reset = df.reset_index(level=['lat', 'lon'])
+            
+            if isinstance(method, str):
+                resampled = df_reset.groupby('time').resample(rule, on='time')[variable_name].agg(method)
+            else:
+                resampled = df_reset.groupby('time').resample(rule, on='time')[variable_name].apply(method)
+            
+            # 重建MultiIndex
+            result = resampled.unstack(level=['lat', 'lon'])
+            
+            self._log_operation(
+                operation=operation,
+                status="SUCCESS",
+                message=f"Resampled shape: {result.shape}"
+            )
+            
+            return result
+        except Exception as e:
+            self._log_operation(
+                operation=operation,
+                status="FAILED",
+                message=f"Error: {str(e)}",
+                exception=e
+            )
+            raise
+
+    def resample_multi_vars(self, variable_names: List[str], rule: str, 
+                            method: Union[str, Dict[str, str]] = 'mean',
+                            lat_slice: slice = None,
+                            lon_slice: slice = None,
+                            **kwargs
+                            ) -> Dict[str, pd.DataFrame]:
+        """
+        批量重采样多个变量
+        
+        参数:
+            variable_names: 变量名列表
+            rule: 重采样规则
+            method: 统一方法或各变量指定方法(字典形式)
+            lat_slice: 纬度维度切片
+            lon_slice: 经度维度切片
+            
+        返回:
+            dict: {变量名: 重采样数据} 的字典
+        """
+        operation = f"Resample multiple variables by {rule}"
+        self._log_operation(
+            operation=operation,
+            status="STARTED",
+            message=f"Variables: {variable_names}, Method: {method}"
+        )
+        try:
+            results = {}
+            for var in variable_names:
+                current_method = method[var] if isinstance(method, dict) else method
+                
+                self._log_operation(
+                    operation=f"Processing {var}",
+                    status="PROGRESS",
+                    message=f"Method: {current_method}"
+                )
+                
+                results[var] = self.resample_time(
+                    variable_name=var,
+                    rule=rule,
+                    method=current_method,
+                    lat_slice=lat_slice,
+                    lon_slice=lon_slice,
+                    **kwargs
+                )
+            
+            self._log_operation(
+                operation=operation,
+                status="SUCCESS",
+                message=f"Completed {len(results)} variables"
+            )
+            
+            return results
+
+        except Exception as e:
+            self._log_operation(
+                operation=operation,
+                status="FAILED",
+                message=f"Error: {str(e)}",
+                exception=e
+            )
+            raise
