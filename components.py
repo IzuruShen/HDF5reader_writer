@@ -352,7 +352,7 @@ class DataTransformer:
             lons = coord_group["Longitude"][:]
             time = coord_group["Time"][:]
             
-            data = self.reader.get_variable_data(var_name)
+            data = self.reader.get_variable_data(var_name)[:]
             if data.shape != (len(time), len(lats), len(lons)):
                 error_msg = f"The shape of variable {var_name} : {data.shape} is not (time, lat, lon) "
                 self._log_operation(
@@ -463,6 +463,7 @@ class DataPreprocessor:
                 message=str(e)
             )
             raise
+    
     def __base_cleaner(self, 
                      data_name: str,
                      min_threshold = None,
@@ -636,7 +637,7 @@ class DataPreprocessor:
         异常:
             ValueError: 当raise_errors=True且存在无效风速数据时
         """        
-        return self._base_cleaner(
+        return self.__base_cleaner(
             data_name=temperature_name,
             min_threshold=temperature_min_threshold,
             max_threshold=temperature_max_threshold,
@@ -790,7 +791,7 @@ class DataAnalyzer:
                 index=index,
                 columns=[variable_name]
             )
-            self._log_operation_if_enabled(
+            self._log_operation(
                 operation=operation,
                 status="SUCCESS",
                 message=f"Result shape: {df.shape}"
@@ -799,7 +800,7 @@ class DataAnalyzer:
             
         except KeyError as e:
             error_msg = f"Variable '{variable_name}' does not exist"
-            self._log_operation_if_enabled(
+            self._log_operation(
                 operation=operation,
                 status="FAILED",
                 message=error_msg,
@@ -807,7 +808,7 @@ class DataAnalyzer:
             )
             raise KeyError(error_msg) from e
         except Exception as e:
-            self._log_operation_if_enabled(
+            self._log_operation(
                 operation=operation,
                 status="FAILED",
                 message=f"Unexpected error: {str(e)}",

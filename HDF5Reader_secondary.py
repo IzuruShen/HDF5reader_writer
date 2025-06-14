@@ -211,7 +211,13 @@ class HDF5reader_writer:
         )
         group_path = "Observations/" + variable_name
         try:
-            self.get_dataset(group_path=group_path)
+            dataset = self.get_dataset(group_path=group_path)
+            data = dataset[:]  # 获取实际数据
+            elf._log_operation_if_enabled(
+                operation=operation,
+                status="SUCCESS"
+            )
+            return data
         except Exception as e:
             self._log_operation_if_enabled(
                 operation=operation,
@@ -219,12 +225,7 @@ class HDF5reader_writer:
                 message=str(e),
                 exception=e  # 传递异常对象
             )
-            raise  # 重新抛出异常
-        else:
-            self._log_operation_if_enabled(
-                operation=operation,
-                status="SUCCESS"
-            )
+            raise  # 重新抛出异常            
     
     def get_global_attributes(self) -> Dict[str, Any]:
         """
@@ -325,7 +326,7 @@ class HDF5reader_writer:
             )
             raise
     
-    # 气象数据操作方法
+    # 气象数据写入方法
     def write_meteo_hdf5(self, time_points: int, lat_points: int, lon_points: int, 
                          lat_min=-90, lat_max=90, lon_min=-180, lon_max=180,
                          time_values=None,
