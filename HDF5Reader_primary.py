@@ -8,7 +8,6 @@ Created on Wed Jun 11 15:09:11 2025
 import h5py as h5
 import numpy as np
 from datetime import datetime
-import numbers
 import time
 import pandas as pd
 
@@ -50,7 +49,7 @@ class HDF5reader_writer:
             except RuntimeError as e:
                 if attempt == max_retries - 1:
                     raise RuntimeError("The parsing of the NetCDF file failed") from e
-            except Exception as e:
+            except Exception:
                 if attempt == max_retries - 1:
                     raise
             time.sleep(retry_delay)  # 重试前等待..
@@ -60,7 +59,7 @@ class HDF5reader_writer:
         try:
             self.__openhdf5('r')  # 打开文件
             return self         # 返回实例自身，供 with 块使用
-        except Exception as e:
+        except Exception:
             raise              # 重新抛出异常
     
     def __exit__(self, exc_type, exc_val, exc_tb):
@@ -247,9 +246,7 @@ class HDF5reader_writer:
                     
                 except KeyError as e:
                     raise KeyError("Missing required key '{e.args[0]}' in variable '{var_name}'")
-                except (ValueError, TypeError) as e:
-                    raise
-                except Exception as e:
+                except Exception:
                     raise 
     
     def append_meteo_hdf5(self, time_points, lat_points, lon_points,
@@ -317,9 +314,7 @@ class HDF5reader_writer:
     
                 except KeyError as e:
                     raise KeyError("Missing required key '{e.args[0]}' in variable '{var_name}'")
-                except (ValueError, TypeError) as e:
-                    raise
-                except Exception as e:
+                except Exception:
                     raise 
 
 hdf5_test = HDF5reader_writer("D://test//hdf5_test.h5")

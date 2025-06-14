@@ -1,49 +1,190 @@
 # -*- coding: utf-8 -*-
 """
-Created on Wed Jun 11 20:45:11 2025
+Created on Sat Jun 14 18:18:35 2025
 
 @author: mirag
 """
 
-import h5py as h5
+from abc import ABC, abstractmethod
+from typing import Dict, Any, Union, Optional, List
 import numpy as np
+import pandas as pd
+import h5py as h5
 from datetime import datetime
 import time
-from typing import Optional, Dict, Any  # 确保所有需要的类型提示都已导入
+import operator
+from scipy.constants import g as g0
+import logging
+from logging.handlers import RotatingFileHandler
 from components import DataTransformer, Converter, Logger, DataPreprocessor, DataAnalyzer, TimeResampler, DataFilter
 
-class HDF5reader_writer:
-    """
-    HDF5读写器，支持'r','w''a'模式
-    支持读入 Observations 组中指定变量的数据和属性以及全局属性
-    支持summary_meteorological,读取数据并打印全局属性的部分信息
-    请尽可能使用with语句而不是实例化
-    """
-    def __init__(self, file_path: str, enable_logging: bool = True):
-        """
-        初始化 HDF5Reader 实例，使用组合模式整合各功能模块
+# ---------------------- 基础组件 (保持不变) ----------------------
+# 这里包含你原有的 Converter, Logger, DataTransformer 等组件
+# 为了简洁，我省略了这些组件的代码，实际使用时请保留
+
+# ---------------------- 抽象基类 ----------------------
+class DataReaderWriter(ABC):
+    """所有数据读写器的抽象基类"""
+    
+    @abstractmethod
+    def read(self, **kwargs) -> Dict[str, Any]:
+        """读取数据文件"""
+        pass
+    
+    @abstractmethod
+    def write(self, data: Dict[str, Any], **kwargs):
+        """写入数据文件"""
+        pass
+    
+    def __enter__(self):
+        """上下文管理支持"""
+        return self
+    
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        """上下文管理支持"""
+        pass
+
+class BinaryBasedReaderWriter(DataReaderWriter):
+    """二进制格式读写器的基类"""
+    
+    def __init__(self, enable_logging: bool = True):
+        self._file_path = None
+        self._enable_logging = enable_logging
         
-        参数:
-            file_path: HDF5 文件的路径
-            enable_logging: 默认True,是否使用日志 
-        """
+    @abstractmethod
+    def _open_file(self, file_path: str, mode: str):
+        """子类实现具体的文件打开方式"""
+        pass
+    
+    def close(self):
+        """关闭文件资源"""
+        pass
+
+class NetCDF_HDF_Base(BinaryBasedReaderWriter):
+    """NetCDF和HDF共享功能的基类"""
+    
+    def __init__(self, enable_logging: bool = True):
+        super().__init__(enable_logging)
+        self._dataset = None
+        
+    def get_global_attributes(self) -> Dict[str, Any]:
+        """获取全局属性"""
+        pass
+    
+    def get_variable_data(self, variable_name: str) -> np.ndarray:
+        """获取变量数据"""
+        pass
+    
+    def get_local_attributes(self, dataset_name: str) -> Dict[str, Any]:
+        """获取局部属性"""
+        pass
+    
+    def write_meteo_data(self, time_points: int, lat_points: int, lon_points: int,
+                        lat_min: float = -90, lat_max: float = 90,
+                        lon_min: float = -180, lon_max: float = 180,
+                        time_values: Optional[np.ndarray] = None,
+                        dic_data: Optional[Dict[str, Dict[str, Any]]] = None):
+        """写入气象数据 """
+        pass
+
+# ---------------------- HDF5读写器 (改造后的实现) ----------------------
+class HDF5ReaderWriter(NetCDF_HDF_Base):
+    """
+    HDF5读写器，支持'r','w','a'模式
+    支持读入 Observations 组中指定变量的数据和属性以及全局属性
+    """
+    
+    def __init__(self, file_path: str = None, enable_logging: bool = True):
+        super().__init__(enable_logging)
         self.__file_path = file_path
         self.__dataset = None
         
         # 组合功能组件
-        self.converter = Converter()                   # 单位转换
-        self._logger = Logger() if enable_logging else None  # 可选日志
-        self.pdtransform = DataTransformer(self)         # 数据转换（需传入主类实例）
+        self.converter = Converter()
+        self._logger = Logger() if enable_logging else None
+        self.pdtransform = DataTransformer(self)
         self.datacleaner = DataPreprocessor(self)
         self.dataanalyzer = DataAnalyzer(self)
         self.timeresampler = TimeResampler(self)
         self.datafilier = DataFilter(self)
     
-    # 辅助方法：简化日志调用
-    def _log_operation_if_enabled(self, **kwargs):
-        """仅在日志启用时记录操作"""
-        if hasattr(self, '_logger') and self._logger is not None:   # hasattr(self, '_logger'):检查对象 self 是否拥有名为 '_logger' 的属性
-            self._logger.log_operation(**kwargs)
+    # 实现基类要求的抽象方法
+    def read(self, **kwargs) -> Dict[str, Any]:
+        """读取HDF5文件数据"""
+        return self.get_dataset()
+    
+    def write(self, data: Dict[str, Any] = None, **kwargs):
+        """
+        创建一个 HDF5 文件或完全覆盖之前的文件，并写入数据
+        
+        参数:
+            data: 字典，格式为:
+                {
+                    "var_name1": values,
+                    ...
+                }
+        """
+        operation="Write meteorological data"
+        # 记录操作开始（包含基础参数）
+        self._log_operation_if_enabled(
+            operation=operation,
+            status="STARTED",
+            message=f"File: {self.__file_path}, Dimensions: "
+                    f"Variables: {list(data.keys())}"
+        )
+        
+        # 打开或创建 HDF5 文件，使用 'w' 模式会覆盖同名文件
+        with h5.File(self.__file_path, 'w') as h5_file:
+            # 写入全局属性
+            h5_file.attrs['CreationDate'] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            h5_file.attrs['DataSource'] = 'Simulated meteorological data'
+            h5_file.attrs['Description'] = f'meteorological data, include {data.keys()}'
+            
+            self._log_operation_if_enabled(
+                operation="Global attributes",
+                status="NOTE"
+            )
+            
+            group = h5_file.create_group('Data')
+            
+            self._log_operation_if_enabled(
+                operation="Group structure",
+                status="NOTE",
+                message="Created Data groups"
+            )
+            
+            # 遍历 dic_data，写入所有变量
+            vars_written = []
+            for var_name, var_info in data.items():
+                try:
+                    datum = var_info["data"]
+    
+                    dset = group.create_dataset(var_name, data=datum)
+
+                    vars_written.append(var_name)               
+                    self._log_operation_if_enabled(
+                        operation=f"Write variable {var_name}",
+                        status="SUCCESS"
+                    )
+                except KeyError as e:
+                    self._log_operation_if_enabled(
+                        operation=f"Write variable {var_name}",
+                        status="FAILED",
+                        message=f"Missing required key: {str(e)}"
+                    )
+                    raise
+                except Exception as e:
+                    self._log_operation_if_enabled(
+                        operation=f"Write variable {var_name}",
+                        status="FAILED",
+                        message=str(e)
+                    )
+                    raise
+        self._log_operation_if_enabled(
+            operation="Write meteorological data",
+            status="SUCCESS",
+            message=f"Variables written: {vars_written}"
+        )
     
     def __openhdf5(self, mode='r'):
         """
@@ -224,7 +365,7 @@ class HDF5reader_writer:
                 message=str(e),
                 exception=e  # 传递异常对象
             )
-            raise  # 重新抛出异常            
+            raise  # 重新抛出异常
     
     def get_global_attributes(self) -> Dict[str, Any]:
         """
@@ -255,7 +396,7 @@ class HDF5reader_writer:
             )
             raise
     
-    def get_local_attributes(self, dataset_name: str) -> dict:
+    def get_local_attributes(self, dataset_name: str) -> Dict[str, Any]:
         """
         读取 Observations 组中指定数据集的局部属性，并以字典形式返回。
         
@@ -323,11 +464,10 @@ class HDF5reader_writer:
             )
             raise
     
-    # 气象数据写入方法
     def write_meteo_hdf5(self, time_points: int, lat_points: int, lon_points: int, 
-                         lat_min=-90, lat_max=90, lon_min=-180, lon_max=180,
-                         time_values=None,
-                         dic_data: Optional[Dict[str, Dict[str, Any]]] =None):
+                        lat_min=-90, lat_max=90, lon_min=-180, lon_max=180,
+                        time_values=None,
+                        dic_data: Optional[Dict[str, Dict[str, Any]]] = None):
         """
         创建一个 HDF5 文件或完全覆盖之前的文件，并写入数据
         所有变量均包含 units 和 description 属性。
@@ -639,49 +779,82 @@ class HDF5reader_writer:
             )
             raise
 
-hdf5_test=HDF5reader_writer("D://test//hdf5_test.h5")
-time_points = 2
-lat_points = 6
-lon_points = 6
-# 生成随机气象数据
-temperature = np.random.uniform(low=-20, high=40, size=(time_points, lat_points, lon_points))
-humidity = np.random.uniform(low=0, high=100, size=(time_points, lat_points, lon_points))
-pressure = np.random.uniform(low=950, high=1050, size=(time_points, lat_points, lon_points))
-windspeed = np.abs(np.random.normal(3, 2, size=(time_points, lat_points, lon_points)))
-winddirection = np.random.uniform(low=0, high=360, size=(time_points, lat_points, lon_points))
-dic_data = {
-    'Temperature': {
-        "data": temperature,
-        "units": "°C",
-        "description": "temperature"
-        },
-    'Humidity': {
-        "data": humidity,
-        "units": "%",
-        "description": "humidity"
-        },
-    'Pressure': {
-        "data": pressure,
-        "units": "hPa",
-        "description": "pressure"
-        },
-    'WindSpeed': {
-        "data": windspeed,
-        "units": "m/s",
-        "description": "wind_speed"
-        },
-    'WindDirection': {
-        "data": winddirection,
-        "units": "°",
-        "description": "wind_direction"
-        }
-    }
-hdf5_test.write_meteo_hdf5(time_points=time_points,lat_points=lat_points, lon_points=lon_points, 
-                           lat_min=-60, lat_max=-30, lon_min=30, lon_max=60,
-                            time_values=None, dic_data=dic_data)
 
-with HDF5reader_writer("D://test//hdf5_test.h5") as h5file:
-    print(f'global attributes : {h5file.get_global_attributes()}')
-    print(f'Humidity data : {h5file.get_variable_data("Humidity")}')
-    print(f'Temperature attributes : {h5file.get_local_attributes("Temperature")}')
-    h5file.summary_meteorological()
+# ---------------------- NetCDF4读写器 ----------------------
+class NetCDF4ReaderWriter(NetCDF_HDF_Base):
+    """NetCDF4读写器实现"""
+    
+    def __init__(self, file_path: str, enable_logging: bool = True):
+        super().__init__(enable_logging)
+        self.__dataset = None
+        self.__file_path = file_path
+    
+    def read(self, **kwargs) -> Dict[str, Any]:
+        """读取NetCDF文件"""
+        pass
+    
+    def write(self, file_path: str, data: Dict[str, Any], **kwargs):
+        """写入NetCDF文件"""
+        pass
+    
+    def get_global_attributes(self) -> Dict[str, Any]:
+        """获取全局属性"""
+        pass
+    
+    def get_variable_data(self, variable_name: str) -> np.ndarray:
+        """获取变量数据"""
+        pass
+    
+    def get_local_attributes(self, dataset_name: str) -> Dict[str, Any]:
+        """获取局部属性"""
+        pass
+    
+    def write_meteo_data(self, time_points: int, lat_points: int, lon_points: int,
+                        lat_min: float = -90, lat_max: float = 90,
+                        lon_min: float = -180, lon_max: float = 180,
+                        time_values: Optional[np.ndarray] = None,
+                        dic_data: Optional[Dict[str, Dict[str, Any]]] = None):
+        """写入气象数据 """
+        pass
+
+# ---------------------- 文本格式读写器 ----------------------
+class TextBasedReaderWriter(DataReaderWriter):
+    """文本格式读写器的基类"""
+    
+    def __init__(self, delimiter: str = ",", enable_logging: bool = True):
+        self._delimiter = delimiter
+        self._enable_logging = enable_logging
+        
+    @abstractmethod
+    def _parse_file(self, file_path: str) -> pd.DataFrame:
+        """子类实现具体的文件解析逻辑"""
+        pass
+
+class CSVReaderWriter(TextBasedReaderWriter):
+    """CSV文件读写器"""
+    
+    def read(self, file_path: str, **kwargs) -> Dict[str, Any]:
+        pass
+    
+    def write(self, file_path: str, data: Dict[str, Any], **kwargs):
+        pass
+
+class ExcelReaderWriter(TextBasedReaderWriter):
+    """Excel文件读写器"""
+    
+    def read(self, file_path: str, **kwargs) -> Dict[str, Any]:
+        pass
+    
+    def write(self, file_path: str, data: Dict[str, Any], **kwargs):
+        pass
+
+class ASCIIDataReaderWriter(TextBasedReaderWriter):
+    """ASCII数据读写器"""
+    
+    def read(self, file_path: str, **kwargs) -> Dict[str, Any]:
+        # 实现ASCII文件读取逻辑
+        pass
+    
+    def write(self, file_path: str, data: Dict[str, Any], **kwargs):
+        # 实现ASCII文件写入逻辑
+        pass
