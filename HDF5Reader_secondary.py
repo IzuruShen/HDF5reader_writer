@@ -11,7 +11,7 @@ from datetime import datetime
 import time
 import pandas as pd
 from typing import Optional, Union, Dict, List, Any, Callable  # 确保所有需要的类型提示都已导入
-from components import DataTransformer, Converter, Logger, DataPreprocessor
+from components import DataTransformer, Converter, Logger, DataPreprocessor, DataAnalyzer, TimeResampler, DataFilter
 
 class HDF5reader_writer:
     """
@@ -38,6 +38,7 @@ class HDF5reader_writer:
         self.datacleaner = DataPreprocessor(self)
         self.dataanalyzer = DataAnalyzer(self)
         self.timeresampler = TimeResampler(self)
+        self.datafilier = DataFilter(self)
     
     # 辅助方法：简化日志调用
     def _log_operation_if_enabled(self, **kwargs):

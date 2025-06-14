@@ -10,7 +10,8 @@ import numpy as np
 from scipy.constants import g as g0  # 标准重力加速度
 import logging
 from logging.handlers import RotatingFileHandler
-from typing import Optional, Union, Dict, List, Any, Callable  # 确保所有需要的类型提示都已导入
+from typing import Optional, Union, Dict, List, Any, Callable, Sequence, Tuple  # 确保所有需要的类型提示都已导入
+import operator
 
 # ---------------------- 单位转换组件 ----------------------
 class Converter:
@@ -135,6 +136,12 @@ class DataTransformer:
     """将 HDF5 文件转化成 pandas 格式的数据"""
     def __init__(self, hdf5_reader):
         self.reader = hdf5_reader  # 组合主类实例
+        self._logger = getattr(hdf5_reader, '_logger', None)  # 复用主类的日志
+        
+    def _log_operation(self, **kwargs):
+        """仅在日志启用时记录操作"""
+        if self._logger is not None:
+            self._logger.log_operation(**kwargs)
 
     def to_dataframe(self, include_attrs: bool =False) -> pd.DataFrame:
         """
@@ -142,55 +149,244 @@ class DataTransformer:
         
         参数:
             include_attrs(bool):默认为False,判断是否将 HDF5 文件中指变量的属性提取出来存入字典
+            
+        返回:
+            当include_attrs为True时返回元组(DataFrame, 属性字典)
+            否则返回DataFrame
         """
-        data_dict = {}
-        attrs_dict = {} if include_attrs else None
+        operation = "Convert to DataFrame"
+        self._log_operation(
+            operation=operation, 
+            status="STARTED", 
+            message=f"Include attributes: {include_attrs}"
+            )
+        try:
+            data_dict = {}
+            attrs_dict = {} if include_attrs else None
+            
+            # 获取数据组
+            obs_group = self.reader.get_dataset("Observations")
+            coord_group = obs_group["Coordinates"]
+            
+            # 读取坐标数据
+            lats = coord_group["Latitude"][:]
+            lons = coord_group["Longitude"][:]
+            time = coord_group["Time"][:]
+            
+            # 创建多级索引
+            index = pd.MultiIndex.from_product(
+                [time, lats, lons],
+                names=["time", "lat", "lon"]
+            )
+            
+            vars_processed = 0
+            for var_name in obs_group:
+                if var_name == "Coordinates":
+                    continue
+                data = obs_group[var_name][:]
+                if data.shape != (len(time), len(lats), len(lons)):
+                    error_msg = f"The shape of variable {var_name} : {data.shape} is not (time, lat, lon) "
+                    self._log_operation(
+                        operation=operation, 
+                        status="FAILED", 
+                        message=error_msg
+                        )
+                    raise ValueError(error_msg)
+                data_dict[var_name] = data.flatten()
+                if include_attrs:
+                    attrs_dict[var_name] = dict(obs_group[var_name].attrs)
+                vars_processed += 1
+                self._log_operation(
+                    operation=f"Processing variable {var_name}", 
+                    status="SUCCESS"
+                    )
+                
+            df = pd.DataFrame(data_dict, index=index)
+            self._log_operation(
+                operation=operation, 
+                status="SUCCESS", 
+                message=f"Converted {vars_processed} variables to DataFrame"
+            )
+            return (df, attrs_dict) if include_attrs else df
+        except ValueError:
+            raise
+        except Exception as e:
+            self._log_operation(
+                operation=operation, 
+                status="FAILED", 
+                message=str(e), 
+                exception=e)
+            raise
         
-        obs_group = self.reader.get_dataset("Observations")
-        coord_group = obs_group["Coordinates"]
-        lats = coord_group["Latitude"][:]
-        lons = coord_group["Longitude"][:]
-        time = coord_group["Time"][:]
-        index = pd.MultiIndex.from_product(
-            [time, lats, lons],
-            names=["time", "lat", "lon"]
+    def selected_to_dataframe(self, variable_names: Sequence[str], 
+                              include_attrs: bool = False
+                              ) -> Union[pd.DataFrame, Tuple[pd.DataFrame, Dict]]:
+        """
+        将指定的变量转换为DataFrame，使用三维坐标索引 (time, lat, lon)
+        
+        参数:
+            variable_names: 需要转换的变量名列表或元组
+            include_attrs: 是否包含属性信息
+            
+        返回:
+            当include_attrs为True时返回元组(DataFrame, 属性字典)
+            否则返回DataFrame
+            
+        异常:
+            ValueError: 当变量不存在或形状不匹配时
+            KeyError: 当指定的变量不存在时
+        """
+        operation = f"Convert selected variables to DataFrame: {variable_names}"
+        self._log_operation(
+            operation=operation,
+            status="STARTED",
+            message=f"Include attributes: {include_attrs}"
         )
         
-        for var_name in obs_group:
-            if var_name == "Coordinates":
-                continue
-            data = obs_group[var_name][:]
-            if data.shape != (len(time), len(lats), len(lons)):
-                raise ValueError(f"变量 {var_name} 的形状 {data.shape} 不符合 (time, lat, lon) 要求")
-            data_dict[var_name] = data.flatten()
-            if include_attrs:
-                attrs_dict[var_name] = dict(obs_group[var_name].attrs)
-        df = pd.DataFrame(data_dict, index=index)
-        return (df, attrs_dict) if include_attrs else df
-
+        # 参数校验
+        if not isinstance(variable_names, (list, tuple)):
+            error_msg = (
+                f"variable_names must be sequence of str, "
+                f"got {type(variable_names).__name__}"
+            )
+            self._log_operation(
+                operation=operation, 
+                status="FAILED", 
+                message=error_msg
+                )
+            raise TypeError(error_msg)
+        if not variable_names:
+            error_msg = "variable_names cannot be empty"
+            self._log_operation(
+                operation=operation, 
+                status="FAILED", 
+                message=error_msg
+                )
+            raise ValueError(error_msg)
+            
+        try:    
+            data_dict = {}
+            attrs_dict = {} if include_attrs else None
+            
+            obs_group = self.reader.get_dataset("Observations")
+            coord_group = obs_group["Coordinates"]
+            
+            # 检查变量是否存在
+            missing_vars = (name for name in variable_names if name not in obs_group)
+            if missing_vars:
+                error_msg = f"Variables not found: {missing_vars}"
+                self._log_operation(
+                    operation=operation, 
+                    status="FAILED", 
+                    message=error_msg
+                    )
+                raise KeyError(error_msg)
+            
+            lats = coord_group["Latitude"][:]
+            lons = coord_group["Longitude"][:]
+            time = coord_group["Time"][:]
+            
+            index = pd.MultiIndex.from_product(
+                [time, lats, lons],
+                names=["time", "lat", "lon"]
+            )
+            
+            for var_name in variable_names:
+                if var_name == "Coordinates":
+                    error_msg = "Coordinates cannot be the content of DataFrame"
+                    self._log_operation(
+                        operation=operation, 
+                        status="FAILED", 
+                        message=error_msg
+                        )
+                    raise KeyError(error_msg)
+                    
+                self._log_operation(
+                    operation=f"Processing variable {var_name}",
+                    status="STARTED"
+                )
+                data = obs_group[var_name][:]
+                if data.shape != (len(time), len(lats), len(lons)):
+                    error_msg = f"Shape mismatch for {var_name}: {data.shape} != ({len(time)}, {len(lats)}, {len(lons)})"
+                    self._log_operation(operation, "FAILED", error_msg)
+                    raise ValueError(error_msg)
+                data_dict[var_name] = data.flatten()
+                
+                if include_attrs:
+                    attrs_dict[var_name] = dict(obs_group[var_name].attrs)   
+                self._log_operation(
+                    operation=f"Processing variable {var_name}",
+                    status="SUCCESS"
+                )
+            
+            df = pd.DataFrame(data_dict, index=index)
+            self._log_operation(
+                operation=operation,
+                status="SUCCESS",
+                message=f"Converted {len(variable_names)} variables to DataFrame"
+            )
+            return (df, attrs_dict) if include_attrs else df 
+        except (KeyError, ValueError):
+            raise
+        except Exception as e:
+            self._log_operation(
+                operation=operation,
+                status="FAILED",
+                message=str(e),
+                exception=e
+            )
+            raise        
+        
     def variable_to_series(self, var_name: str) -> pd.Series:
         """将单个变量转为Series"""
-        obs_group = self.reader.get_dataset("Observations")
-        coord_group = obs_group["Coordinates"]
-        lats = coord_group["Latitude"][:]
-        lons = coord_group["Longitude"][:]
-        time = coord_group["Time"][:]
-        data = self.reader.get_variable_data(var_name)
-        if data.shape != (len(time), len(lats), len(lons)):
-            raise ValueError(f"变量 {var_name} 的形状 {data.shape} 不符合 (time, lat, lon) 要求")
-        index = pd.MultiIndex.from_product(
-            [time, lats, lons],
-            names=["time", "lat", "lon"]
-        )
-        return pd.Series(data.flatten(), index=index)
-    
+        operation = f"Convert variable {var_name} to Series"
+        self._log_operation(
+            operation=operation, 
+            status="STARTED",
+            message=f"var: {var_name}")
+        try: 
+            obs_group = self.reader.get_dataset("Observations")
+            coord_group = obs_group["Coordinates"]
+            
+            lats = coord_group["Latitude"][:]
+            lons = coord_group["Longitude"][:]
+            time = coord_group["Time"][:]
+            
+            data = self.reader.get_variable_data(var_name)
+            if data.shape != (len(time), len(lats), len(lons)):
+                error_msg = f"The shape of variable {var_name} : {data.shape} is not (time, lat, lon) "
+                self._log_operation(
+                    operation=operation, 
+                    status="FAILED", 
+                    message=error_msg
+                    )
+                raise ValueError(error_msg)
+            
+            index = pd.MultiIndex.from_product(
+                [time, lats, lons],
+                names=["time", "lat", "lon"]
+            )
+            series = pd.Series(data.flatten(), index=index)
+            self._log_operation(
+                operation=operation, 
+                status="SUCCESS"
+                )
+            return series
+        except Exception as e:
+            self._log_operation(
+                operation=operation, 
+                status="FAILED", 
+                message=str(e), 
+                exception=e)
+            raise
+            
 # ---------------------- 数据处理组件 ----------------------
 class DataPreprocessor:
     """数据清洗组件（依赖HDF5reader_writer, DataTransformer和Logger）"""
     def __init__(self,  hdf5_reader):
         self.reader =  hdf5_reader
         self.transformer = getattr(hdf5_reader, 'pdtransform')
-        self._logger = getattr(hdf5_reader, '_logger', None)  # 复用主类的日志
+        self._logger = getattr(hdf5_reader, '_logger', None)
 
     def _log_operation(self, **kwargs):
         """仅在日志启用时记录操作"""
@@ -855,14 +1051,14 @@ class DataAnalyzer:
         )
     
     def get_stats(self, variable_name: str,
-                 stats: List[Union[str, Callable]],
+                 states: List[Union[str, Callable]],
                  time_slice: slice = None,
                  lat_slice: slice = None,
                  lon_slice: slice = None,
                  **kwargs) -> Dict[str, Any]:
         """批量获取多个统计量"""
         results = {}
-        for stat in stats:
+        for stat in states:
             if isinstance(stat, str):
                 stat_name = stat
             else:
@@ -890,7 +1086,7 @@ class DataAnalyzer:
                      lon_slice: slice = None,
                      **kwargs) -> pd.DataFrame:
         """
-        滑动窗口计算
+        滑动窗口计算，目前只支持时间滑动
         
         参数:
             variable_name: 变量名称
@@ -1126,6 +1322,113 @@ class DataAnalyzer:
             time_axis=time_axis,
             **kwargs
         )
+    
+    # -------------------- 相关性分析 --------------------    
+    def calculate_temporal_correlation(self, var1_name: str, var2_name: str,
+                                     time_slice: slice = None,
+                                     lat_slice: slice = None,
+                                     lon_slice: slice = None,
+                                     method: str = 'pearson') -> float:
+        """
+        计算两个变量的时间序列相关性(空间聚合后)
+        
+        参数:
+            var1_name: 第一个变量名
+            var2_name: 第二个变量名
+            time_slice: 时间维度切片
+            lat_slice: 纬度维度切片
+            lon_slice: 经度维度切片
+            method: 相关性计算方法 ('pearson'|'spearman'|'kendall')
+            
+        返回:
+            相关系数
+            
+        异常:
+            ValueError: 当方法不支持或数据形状不匹配时
+        """
+        operation = f"Calculate {method} temporal correlation between {var1_name} and {var2_name}"
+        self._log_operation(
+            operation=operation, 
+            status="STARTED"
+            )
+        
+        try:
+            # 获取两个变量的数据
+            df1 = self.get_variable_slice(var1_name, time_slice, lat_slice, lon_slice)
+            df2 = self.get_variable_slice(var2_name, time_slice, lat_slice, lon_slice)
+            
+            # 合并数据并计算相关性
+            combined = pd.concat([df1, df2], axis=1)
+            corr = combined.corr(method=method).iloc[0, 1]
+            
+            self._log_operation(
+                operation=operation,
+                status="SUCCESS",
+                message=f"Correlation: {corr:.3f}"
+            )
+            return corr  
+        except Exception as e:
+            self._log_operation(
+                operation=operation,
+                status="FAILED",
+                message=f"Error: {str(e)}",
+                exception=e
+            )
+            raise
+            
+    def calculate_spatial_correlation(self, var1_name: str, var2_name: str,
+                                    time_point: int = 0,
+                                    lat_slice: slice = None,
+                                    lon_slice: slice = None,
+                                    method: str = 'pearson') -> float:
+        """
+        计算两个变量在特定时间点的空间相关性
+        
+        参数:
+            var1_name: 第一个变量名
+            var2_name: 第二个变量名
+            time_point: 时间点索引
+            lat_slice: 纬度维度切片
+            lon_slice: 经度维度切片
+            method: 相关性计算方法 ('pearson'|'spearman'|'kendall')
+            
+        返回:
+            空间相关系数
+            
+        异常:
+            ValueError: 当方法不支持或数据形状不匹配时
+        """
+        operation = f"Calculate {method} spatial correlation between {var1_name} and {var2_name} at time={time_point}"
+        self._log_operation(operation=operation, status="STARTED")
+        
+        try:
+            # 获取特定时间点的数据
+            time_slice = slice(time_point, time_point+1)
+            df1 = self.get_variable_slice(var1_name, time_slice, lat_slice, lon_slice)
+            df2 = self.get_variable_slice(var2_name, time_slice, lat_slice, lon_slice)
+            
+            # 提取空间数据并计算相关性
+            spatial_data = pd.DataFrame({
+                'var1': df1[var1_name].values.flatten(),
+                'var2': df2[var2_name].values.flatten()
+            })
+            corr = spatial_data.corr(method=method).iloc[0, 1]
+            
+            self._log_operation(
+                operation=operation,
+                status="SUCCESS",
+                message=f"Spatial correlation: {corr:.3f}"
+            )
+            return corr
+            
+        except Exception as e:
+            self._log_operation(
+                operation=operation,
+                status="FAILED",
+                message=f"Error: {str(e)}",
+                exception=e
+            )
+            raise
 
 # ---------------------- 时间重采样组件 ----------------------
 class TimeResampler:
@@ -1258,6 +1561,178 @@ class TimeResampler:
             
             return results
 
+        except Exception as e:
+            self._log_operation(
+                operation=operation,
+                status="FAILED",
+                message=f"Error: {str(e)}",
+                exception=e
+            )
+            raise
+
+# ---------------------- 数据筛选组件 ----------------------
+class DataFilter:
+    def __init__(self, hdf5_reader):
+        """
+        初始化数据筛选组件
+        
+        参数:
+            hdf5_reader: HDF5reader_writer 实例
+        """
+        self.reader = hdf5_reader
+        self.analyzer = DataAnalyzer(hdf5_reader)
+        self._logger = getattr(hdf5_reader, '_logger', None)  # 复用主类的日志
+    
+    def _log_operation(self, **kwargs):
+        """日志记录方法"""
+        if self._logger is not None:
+            self._logger.log_operation(**kwargs)
+    
+    def load_data(self, variable_names: Union[str, List[str]],
+                 time_slice: slice = None,
+                 lat_slice: slice = None,
+                 lon_slice: slice = None) -> pd.DataFrame:
+        """
+        复用DataAnalyzer的功能加载数据到DataFrame
+        
+        参数:
+            variable_names: 变量名或变量名列表
+            time_slice: 时间维度切片
+            lat_slice: 纬度维度切片
+            lon_slice: 经度维度切片
+            
+        返回:
+            包含请求数据的DataFrame
+        """
+        operation = "Load data for filtering (using DataAnalyzer)"
+        self._log_operation(operation=operation, status="STARTED")
+        
+        try:
+            # 使用DataAnalyzer的get_variable_slice或get_variables_slices方法
+            if isinstance(variable_names, str):
+                df = self.analyzer.get_variable_slice(
+                    variable_names,
+                    time_slice=time_slice,
+                    lat_slice=lat_slice,
+                    lon_slice=lon_slice
+                )
+            else:
+                df = self.analyzer.get_variables_slices(
+                    variable_names,
+                    time_slice=time_slice,
+                    lat_slice=lat_slice,
+                    lon_slice=lon_slice
+                )
+            
+            self._log_operation(
+                operation=operation,
+                status="SUCCESS",
+                message=f"Loaded data shape: {df.shape}"
+            )
+            return df
+        except Exception as e:
+            self._log_operation(
+                operation=operation,
+                status="FAILED",
+                message=f"Error: {str(e)}",
+                exception=e
+            )
+            raise
+    
+    def filter_by_condition(self, df: pd.DataFrame,
+                            variable_name: str,
+                            condition: str,
+                            value: Union[float, int, str]
+                            ) -> pd.DataFrame:
+        """
+        根据条件筛选数据
+        
+        参数:
+            df: 输入DataFrame
+            condition: 筛选条件 ('>', '<', '>=', '<=', '==', '!=')
+            value: 比较值
+            
+        返回:
+            筛选后的DataFrame
+        """
+        operation = f"Filter data by condition {condition} {value}"
+        self._log_operation(operation=operation, status="STARTED")
+        
+        try:
+            if variable_name not in df.columns:
+                error_msg = f"Variable '{variable_name}' not found in DataFrame"
+                self._log_operation(
+                    operation=operation,
+                    status="FAILED",
+                    message=error_msg
+                )
+                raise ValueError(error_msg)
+            
+            # 运算符映射字典
+            op_map = {
+                '>': operator.gt,
+                '<': operator.lt,
+                '>=': operator.ge,
+                '<=': operator.le,
+                '==': operator.eq,
+                '!=': operator.ne
+            }
+            
+            # 获取对应的运算符函数
+            op_func = op_map.get(condition)
+            if op_func is None:
+                error_msg = f"Unsupported condition: {condition}"
+                self._log_operation(
+                    operation=operation,
+                    status="FAILED",
+                    message=error_msg
+                )
+                raise ValueError(error_msg)
+            
+            # 应用筛选条件
+            mask = op_func(df[variable_name], value)
+            filtered = df[mask]
+            
+            self._log_operation(
+                operation=operation,
+                status="SUCCESS",
+                message=f"Filtered records: {len(filtered)}"
+            )
+            return filtered
+        except ValueError:
+            raise
+        except Exception as e:
+            self._log_operation(
+                operation=operation,
+                status="FAILED",
+                message=f"Error: {str(e)}",
+                exception=e
+            )
+            raise
+    
+    def filter_by_query(self, df: pd.DataFrame,
+                      query_str: str) -> pd.DataFrame:
+        """
+        使用查询字符串筛选数据
+        
+        参数:
+            df: 输入DataFrame
+            query_str: pandas查询字符串
+            
+        返回:
+            筛选后的DataFrame
+        """
+        operation = f"Filter data by query: {query_str}"
+        self._log_operation(operation=operation, status="STARTED")
+        
+        try:
+            filtered = df.query(query_str)
+            self._log_operation(
+                operation=operation,
+                status="SUCCESS",
+                message=f"Filtered records: {len(filtered)}"
+            )
+            return filtered    
         except Exception as e:
             self._log_operation(
                 operation=operation,
