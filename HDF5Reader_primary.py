@@ -152,7 +152,6 @@ class HDF5reader_writer:
     def summary_meteorological(self):
         """
         读取 HDF5 文件中的气象数据，并打印全局属性的部分信息。
-    
         """
         print("全局属性：")
         ds = self.get_dataset()
