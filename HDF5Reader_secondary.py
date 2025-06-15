@@ -425,7 +425,6 @@ class HDF5reader_writer:
             if not (lat_points > 0 and lon_points > 0 and time_points > 0):
                 error_msg = "lat_points, lon_points and time_points must be positive"
                 self._log_operation_sure("Parameter validation","FAILED", error_msg)
-                )
                 raise ValueError(error_msg)
             if not (isinstance(lat_points, int) and isinstance(lon_points, int) and isinstance(time_points, int)):
                 error_msg = "lat_points, lon_points and time_points must be integers"

@@ -148,7 +148,11 @@ class DataTransformer:
             否则返回DataFrame
         """
         operation = "Convert to DataFrame"
-        self._log_operation(operation, "STARTED", f"Include attributes: {include_attrs}")
+        self._log_operation(
+            operation=operation, 
+            status="STARTED", 
+            message=f"Include attributes: {include_attrs}"
+            )
         try:
             data_dict = {}
             attrs_dict = {} if include_attrs else None
@@ -175,13 +179,20 @@ class DataTransformer:
                 data = obs_group[var_name][:]
                 if data.shape != (len(time), len(lats), len(lons)):
                     error_msg = f"The shape of variable {var_name} : {data.shape} is not (time, lat, lon) "
-                    self._log_operation(operation, "FAILED", error_msg)
+                    self._log_operation(
+                        operation=operation, 
+                        status="FAILED", 
+                        message=error_msg
+                        )
                     raise ValueError(error_msg)
                 data_dict[var_name] = data.flatten()
                 if include_attrs:
                     attrs_dict[var_name] = dict(obs_group[var_name].attrs)
                 vars_processed += 1
-                self._log_operation(f"Processing variable {var_name}", "SUCCESS")
+                self._log_operation(
+                    operation=f"Processing variable {var_name}", 
+                    status="SUCCESS"
+                    )
                 
             df = pd.DataFrame(data_dict, index=index)
             self._log_operation(
@@ -193,7 +204,11 @@ class DataTransformer:
         except ValueError:
             raise
         except Exception as e:
-            self._log_operation(operation, "FAILED", str(e), e)
+            self._log_operation(
+                operation=operation, 
+                status="FAILED", 
+                message=str(e), 
+                exception=e)
             raise
         
     def selected_to_dataframe(self, variable_names: Sequence[str], 
@@ -215,7 +230,11 @@ class DataTransformer:
             KeyError: 当指定的变量不存在时
         """
         operation = f"Convert selected variables to DataFrame: {variable_names}"
-        self._log_operation(operation, "STARTED", f"Include attributes: {include_attrs}")
+        self._log_operation(
+            operation=operation,
+            status="STARTED",
+            message=f"Include attributes: {include_attrs}"
+        )
         
         # 参数校验
         if not isinstance(variable_names, (list, tuple)):
@@ -223,11 +242,19 @@ class DataTransformer:
                 f"variable_names must be sequence of str, "
                 f"got {type(variable_names).__name__}"
             )
-            self._log_operation(operation, "FAILED", error_msg)
+            self._log_operation(
+                operation=operation, 
+                status="FAILED", 
+                message=error_msg
+                )
             raise TypeError(error_msg)
         if not variable_names:
             error_msg = "variable_names cannot be empty"
-            self._log_operation(operation, "FAILED", error_msg)
+            self._log_operation(
+                operation=operation, 
+                status="FAILED", 
+                message=error_msg
+                )
             raise ValueError(error_msg)
             
         try:    
@@ -241,7 +268,11 @@ class DataTransformer:
             missing_vars = [name for name in variable_names if name not in obs_group]
             if missing_vars:
                 error_msg = f"Variables not found: {missing_vars}"
-                self._log_operation(operation, "FAILED", error_msg)
+                self._log_operation(
+                    operation=operation, 
+                    status="FAILED", 
+                    message=error_msg
+                )
                 raise KeyError(error_msg)
             
             lats = coord_group["Latitude"][:]
@@ -256,10 +287,17 @@ class DataTransformer:
             for var_name in variable_names:
                 if var_name == "Coordinates":
                     error_msg = "Coordinates cannot be the content of DataFrame"
-                    self._log_operation(operation, "FAILED", error_msg)
+                    self._log_operation(
+                        operation=operation, 
+                        status="FAILED", 
+                        message=error_msg
+                        )
                     raise KeyError(error_msg)
                     
-                self._log_operation(f"Processing variable {var_name}", "STARTED")
+                self._log_operation(
+                    operation=f"Processing variable {var_name}",
+                    status="STARTED"
+                )
                 data = obs_group[var_name][:]
                 if data.shape != (len(time), len(lats), len(lons)):
                     error_msg = f"Shape mismatch for {var_name}: {data.shape} != ({len(time)}, {len(lats)}, {len(lons)})"
@@ -269,7 +307,10 @@ class DataTransformer:
                 
                 if include_attrs:
                     attrs_dict[var_name] = dict(obs_group[var_name].attrs)   
-                self._log_operation(f"Processing variable {var_name}", "SUCCESS")
+                self._log_operation(
+                    operation=f"Processing variable {var_name}",
+                    status="SUCCESS"
+                )
             
             df = pd.DataFrame(data_dict, index=index)
             self._log_operation(
@@ -281,13 +322,21 @@ class DataTransformer:
         except (KeyError, ValueError):
             raise
         except Exception as e:
-            self._log_operation(operation, "FAILED", str(e), e)
+            self._log_operation(
+                operation=operation,
+                status="FAILED",
+                message=str(e),
+                exception=e
+            )
             raise        
         
     def variable_to_series(self, var_name: str) -> pd.Series:
         """将单个变量转为Series"""
         operation = f"Convert variable {var_name} to Series"
-        self._log_operation(operation, "STARTED", f"var: {var_name}")
+        self._log_operation(
+            operation=operation, 
+            status="STARTED",
+            message=f"var: {var_name}")
         try: 
             obs_group = self.reader.get_dataset("Observations")
             coord_group = obs_group["Coordinates"]
@@ -299,7 +348,11 @@ class DataTransformer:
             data = obs_group[var_name][:]
             if data.shape != (len(time), len(lats), len(lons)):
                 error_msg = f"The shape of variable {var_name} : {data.shape} is not (time, lat, lon) "
-                self._log_operation(operation, "FAILED", error_msg)
+                self._log_operation(
+                    operation=operation, 
+                    status="FAILED", 
+                    message=error_msg
+                    )
                 raise ValueError(error_msg)
             
             index = pd.MultiIndex.from_product(
@@ -307,10 +360,17 @@ class DataTransformer:
                 names=["time", "lat", "lon"]
             )
             series = pd.Series(data.flatten(), index=index)
-            self._log_operation(operation, "SUCCESS")
+            self._log_operation(
+                operation=operation, 
+                status="SUCCESS"
+                )
             return series
         except Exception as e:
-            self._log_operation(operation, "FAILED", str(e), e)
+            self._log_operation(
+                operation=operation, 
+                status="FAILED", 
+                message=str(e), 
+                exception=e)
             raise
             
 # ---------------------- 数据处理组件 ----------------------
@@ -344,7 +404,7 @@ class DataPreprocessor:
         """
         operation="Time cleaning"
         self._log_operation(
-            operation=operation, 
+            operation=operation,
             status="STARTED", 
             message=f"Variable: {time_name}, drop={drop_nat}"
         )
@@ -371,7 +431,11 @@ class DataPreprocessor:
                 return time_converted
             warning_msg = f"Found {nat_count} invalid timestamps (NaT) in '{time_name}'"
             if raise_errors:
-                self._log_operation(operation, "FAILED", f"{warning_msg} - Raise")
+                self._log_operation(
+                    operation=operation,
+                    status="FAILED", 
+                    message=f"{warning_msg} - Raise"
+                )
                 raise ValueError(warning_msg)
             if drop_nat:
                 cleaned = time_converted.dropna()
@@ -379,18 +443,24 @@ class DataPreprocessor:
             else:
                 cleaned = time_converted
                 action_message = f"{warning_msg} - Kept"
-            self._log_operation(operation, "WARNING", action_message)
+            self._log_operation(
+                operation=operation,
+                status="WARNING", 
+                message=action_message
+            )
             return cleaned
         except Exception as e:
-            self._log_operation(operation, "FAILED", str(e))
+            self._log_operation(
+                operation=operation,
+                status="FAILED", 
+                message=str(e)
+            )
             raise
     
-    def __base_cleaner(self, data_name: str, 
-                       min_threshold = None, max_threshold = None, 
-                       drop_nat: bool = False, 
-                       fill_nat: bool = False, fill_method: str = 'linear', fill_limit: int = 2, 
-                       raise_errors: bool = False, 
-                       data_type: str = "") -> pd.Series:
+    def __base_cleaner(self, data_name: str, min_threshold = None, max_threshold = None, 
+                       drop_nat: bool = False, fill_nat: bool = False, 
+                       fill_method: str = 'linear', fill_limit: int = 2, 
+                       raise_errors: bool = False, data_type: str = "") -> pd.Series:
         """
         通用数据清洗模板方法
         
@@ -420,7 +490,11 @@ class DataPreprocessor:
         # 参数校验
         if drop_nat and fill_nat:
             error_msg = "Cannot enable both drop_nat and fill_nat simultaneously"
-            self._log_operation(operation, "FAILED", error_msg)
+            self._log_operation(
+                operation=operation,
+                status="FAILED", 
+                message=error_msg
+            )
             raise ValueError(error_msg)
 
         try:
@@ -445,7 +519,11 @@ class DataPreprocessor:
 
             # 无无效值情况
             if nat_count == 0:
-                self._log_operation(operation, "SUCCESS", "No invalid values found")
+                self._log_operation(
+                    operation=operation, 
+                    status="SUCCESS", 
+                    message="No invalid values found"
+                    )
                 return cleaned
 
             # 无效值处理
@@ -475,11 +553,19 @@ class DataPreprocessor:
                 result = cleaned
                 action = "Kept"
 
-            self._log_operation(operation, "WARNING", f"{warning_msg} - {action}")
+            self._log_operation(
+                operation=operation, 
+                status="WARNING",
+                message=f"{warning_msg} - {action}"
+            )
             return result
 
         except Exception as e:
-            self._log_operation(operation, "FAILED", str(e))
+            self._log_operation(
+                operation=operation, 
+                status="FAILED", 
+                message=str(e)
+                )
             raise
         
     def wind_speed_cleaner(self, wind_speed_name: str, wind_speed_threshold = None, 
@@ -691,15 +777,29 @@ class DataAnalyzer:
                 index=index,
                 columns=[variable_name]
             )
-            self._log_operation(operation, "SUCCESS", f"Result shape: {df.shape}")
+            self._log_operation(
+                operation=operation,
+                status="SUCCESS",
+                message=f"Result shape: {df.shape}"
+            )
             return df
             
         except KeyError as e:
             error_msg = f"Variable '{variable_name}' does not exist"
-            self._log_operation(operation, "FAILED", error_msg, e)
+            self._log_operation(
+                operation=operation,
+                status="FAILED",
+                message=error_msg,
+                exception=e
+            )
             raise KeyError(error_msg) from e
         except Exception as e:
-            self._log_operation(operation, "FAILED", f"Unexpected error: {str(e)}", e)
+            self._log_operation(
+                operation=operation,
+                status="FAILED",
+                message=f"Unexpected error: {str(e)}",
+                exception=e
+            )
             raise
     
     def get_variables_slices(self, variable_names: List[str], 
@@ -749,13 +849,18 @@ class DataAnalyzer:
             return result       
         except Exception as e:
             # 记录操作失败
-            self._log_operation(operation, "FAILED", f"Error: {str(e)}", e)
+            self._log_operation(
+                operation=operation,
+                status="FAILED",
+                message=f"Error: {str(e)}",
+                exception=e
+            )
             raise
     # -------------------- 统计方法 --------------------        
     def __calculate_statistic(self, variable_name: str, 
                               stat_func: Union[str, Callable], stat_name: str, 
                               time_slice: slice = None, 
-                              lat_slice: slice = None, lon_slice: slice = None,
+                              lat_slice: slice = None, lon_slice: slice = None, 
                               **kwargs) -> Any:
         """
         统计计算核心方法（内部使用）
@@ -796,10 +901,15 @@ class DataAnalyzer:
             
             return result
         except Exception as e:
-            self._log_operation(operation, "FAILED", f"Error: {str(e)}", e)
+            self._log_operation(
+                operation=operation,
+                status="FAILED",
+                message=f"Error: {str(e)}",
+                exception=e
+            )
             raise
             
-    def get_quantile_slice(self, variable_name: str, quantile: float = 0.25, 
+    def get_quantile_slice(self, variable_name: str,  quantile: float = 0.25, 
                            time_slice: slice = None, 
                            lat_slice: slice = None, lon_slice: slice = None) -> float:
         """获取指定分位数"""
@@ -845,7 +955,7 @@ class DataAnalyzer:
             lon_slice=lon_slice
         )
 
-    def get_min(self, variable_name: str, time_slice: slice = None,
+    def get_min(self, variable_name: str, time_slice: slice = None, 
                 lat_slice: slice = None, lon_slice: slice = None) -> float:
         """获取最小值"""
         return self.__calculate_statistic(
@@ -857,7 +967,7 @@ class DataAnalyzer:
             lon_slice=lon_slice
         )
     
-    def get_max(self, variable_name: str, time_slice: slice = None,
+    def get_max(self, variable_name: str, time_slice: slice = None, 
                 lat_slice: slice = None, lon_slice: slice = None) -> float:
         """获取最大值"""
         return self.__calculate_statistic(
@@ -881,7 +991,7 @@ class DataAnalyzer:
             lon_slice=lon_slice
         )
     
-    def get_sum(self, variable_name: str, time_slice: slice = None,
+    def get_sum(self, variable_name: str, time_slice: slice = None, 
                 lat_slice: slice = None, lon_slice: slice = None) -> float:
         """获取和"""
         return self.__calculate_statistic(
@@ -893,10 +1003,10 @@ class DataAnalyzer:
             lon_slice=lon_slice
         )
     
-    def get_custom_stat(self, variable_name: str, stat_func: Callable, stat_name: str, 
+    def get_custom_stat(self, variable_name: str, 
+                        stat_func: Callable, stat_name: str, 
                         time_slice: slice = None, 
-                        lat_slice: slice = None, 
-                        lon_slice: slice = None,
+                        lat_slice: slice = None, lon_slice: slice = None, 
                         **kwargs) -> Any:
         """自定义统计计算"""
         return self.__calculate_statistic(
@@ -934,7 +1044,7 @@ class DataAnalyzer:
     
     # -------------------- 滑动窗口 --------------------
     def __rolling_window(self, variable_name: str, window_size: int, 
-                         stat_func: Union[str, Callable] = 'mean',  
+                         stat_func: Union[str, Callable] = 'mean', stat_name: str = 'mean', 
                          time_axis: bool = True, time_slice: slice = None, 
                          lat_slice: slice = None, lon_slice: slice = None, 
                          **kwargs) -> pd.DataFrame:
@@ -988,13 +1098,16 @@ class DataAnalyzer:
             return result.unstack(level=[0,1]) if time_axis else result
             
         except Exception as e:
-            self._log_operation(operation, "FAILED", f"Error: {str(e)}", e)
+            self._log_operation(
+                operation=operation,
+                status="FAILED",
+                message=f"Error: {str(e)}",
+                exception=e
+            )
             raise
             
-    def rolling_quantile(self, variable_name: str, 
-                         window_size: int, 
-                         time_axis: bool = True, 
-                         quantile: float = 0.25, 
+    def rolling_quantile(self, variable_name: str,  window_size: int, 
+                         time_axis: bool = True, quantile: float = 0.25, 
                          **kwargs) -> pd.DataFrame:
         """
         滑动分位数
@@ -1021,10 +1134,8 @@ class DataAnalyzer:
             **kwargs
         )
     
-    def rolling_mean(self, variable_name: str, 
-                     window_size: int, 
-                     time_axis: bool = True, 
-                     **kwargs) -> pd.DataFrame:
+    def rolling_mean(self, variable_name: str, window_size: int, 
+                     time_axis: bool = True, **kwargs) -> pd.DataFrame:
         """
         滑动平均
         
@@ -1040,10 +1151,8 @@ class DataAnalyzer:
             **kwargs
         )
     
-    def rolling_std_deviation(self, variable_name: str, 
-                              window_size: int, 
-                              time_axis: bool = True, 
-                              **kwargs) -> pd.DataFrame:
+    def rolling_std_deviation(self, variable_name: str, window_size: int, 
+                              time_axis: bool = True, **kwargs) -> pd.DataFrame:
         """
         滑动标准差
         
@@ -1118,7 +1227,7 @@ class DataAnalyzer:
             **kwargs
         )
     
-    def rolling_sum(self, variable_name: str, window_size: int, 
+    def rolling_sum(self, variable_name: str, window_size: int,
                     time_axis: bool = True, **kwargs) -> pd.DataFrame:
         """
         滑动和
@@ -1181,7 +1290,10 @@ class DataAnalyzer:
             ValueError: 当方法不支持或数据形状不匹配时
         """
         operation = f"Calculate {method} temporal correlation between {var1_name} and {var2_name}"
-        self._log_operation(operation, "STARTED")
+        self._log_operation(
+            operation=operation, 
+            status="STARTED"
+            )
         
         try:
             # 获取两个变量的数据
@@ -1229,7 +1341,7 @@ class DataAnalyzer:
             ValueError: 当方法不支持或数据形状不匹配时
         """
         operation = f"Calculate {method} spatial correlation between {var1_name} and {var2_name} at time={time_point}"
-        self._log_operation(operation, "STARTED")
+        self._log_operation(operation=operation, status="STARTED")
         
         try:
             # 获取特定时间点的数据
@@ -1252,7 +1364,12 @@ class DataAnalyzer:
             return corr
             
         except Exception as e:
-            self._log_operation(operation, "FAILED", f"Error: {str(e)}", e)
+            self._log_operation(
+                operation=operation,
+                status="FAILED",
+                message=f"Error: {str(e)}",
+                exception=e
+            )
             raise
 
 # ---------------------- 时间重采样组件 ----------------------
@@ -1400,7 +1517,12 @@ class TimeResampler:
             return results
 
         except Exception as e:
-            self._log_operation(operation, "FAILED", f"Error: {str(e)}", e)
+            self._log_operation(
+                operation=operation,
+                status="FAILED",
+                message=f"Error: {str(e)}",
+                exception=e
+            )
             raise
 
 # ---------------------- 数据筛选组件 ----------------------
@@ -1421,10 +1543,8 @@ class DataFilter:
         if self._logger is not None:
             self._logger.log_operation(**kwargs)
     
-    def load_data(self, variable_names: Union[str, List[str]], 
-                  time_slice: slice = None, 
-                  lat_slice: slice = None, 
-                  lon_slice: slice = None) -> pd.DataFrame:
+    def load_data(self, variable_names: Union[str, List[str]], time_slice: slice = None, 
+                  lat_slice: slice = None, lon_slice: slice = None) -> pd.DataFrame:
         """
         复用DataAnalyzer的功能加载数据到DataFrame
         
@@ -1464,13 +1584,16 @@ class DataFilter:
             )
             return df
         except Exception as e:
-            self._log_operation(operation, "FAILED", f"Error: {str(e)}", e)
+            self._log_operation(
+                operation=operation,
+                status="FAILED",
+                message=f"Error: {str(e)}",
+                exception=e
+            )
             raise
     
-    def filter_by_condition(self, df: pd.DataFrame,
-                            variable_name: str,
-                            condition: str,
-                            value: Union[float, int, str]
+    def filter_by_condition(self, df: pd.DataFrame, variable_name: str,
+                            condition: str, value: Union[float, int, str]
                             ) -> pd.DataFrame:
         """
         根据条件筛选数据
@@ -1489,7 +1612,11 @@ class DataFilter:
         try:
             if variable_name not in df.columns:
                 error_msg = f"Variable '{variable_name}' not found in DataFrame"
-                self._log_operation(operation, "FAILED", error_msg)
+                self._log_operation(
+                    operation=operation,
+                    status="FAILED",
+                    message=error_msg
+                )
                 raise ValueError(error_msg)
             
             # 运算符映射字典
@@ -1506,7 +1633,11 @@ class DataFilter:
             op_func = op_map.get(condition)
             if op_func is None:
                 error_msg = f"Unsupported condition: {condition}"
-                self._log_operation(operation, "FAILED", error_msg)
+                self._log_operation(
+                    operation=operation,
+                    status="FAILED",
+                    message=error_msg
+                )
                 raise ValueError(error_msg)
             
             # 应用筛选条件
@@ -1522,10 +1653,15 @@ class DataFilter:
         except ValueError:
             raise
         except Exception as e:
-            self._log_operation(operation, "FAILED", f"Error: {str(e)}", e)
+            self._log_operation(
+                operation=operation,
+                status="FAILED",
+                message=f"Error: {str(e)}",
+                exception=e
+            )
             raise
     
-    def filter_by_query(self, df: pd.DataFrame,query_str: str) -> pd.DataFrame:
+    def filter_by_query(self, df: pd.DataFrame, query_str: str) -> pd.DataFrame:
         """
         使用查询字符串筛选数据
         
@@ -1548,5 +1684,10 @@ class DataFilter:
             )
             return filtered    
         except Exception as e:
-            self._log_operation(operation, "FAILED", f"Error: {str(e)}", e)
+            self._log_operation(
+                operation=operation,
+                status="FAILED",
+                message=f"Error: {str(e)}",
+                exception=e
+            )
             raise
