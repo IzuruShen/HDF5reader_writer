@@ -73,7 +73,7 @@ class HDF5reader_writer:
             raise
     
     # 辅助方法：简化日志调用
-    def _log_operation_if_enabled(self, **kwargs):
+    def _log_operation_sure(self, **kwargs):
         """仅在日志启用时记录操作"""
         if hasattr(self, '_logger') and self._logger is not None:   # hasattr(self, '_logger'):检查对象 self 是否拥有名为 '_logger' 的属性
             self._logger.log_operation(**kwargs)
@@ -90,7 +90,7 @@ class HDF5reader_writer:
         retry_delay = 1  # 重试间隔(秒)
         for attempt in range(max_retries):
             try:
-                self._log_operation_if_enabled(
+                self._log_operation_sure(
                     operation=operation,
                     status="STARTED",
                     message=f"File: {self.__file_path}"
@@ -101,7 +101,7 @@ class HDF5reader_writer:
                     safe_remove_file(self.__file_path)
                 self.__dataset = h5.File(self.__file_path, self.__mode)
                 
-                self._log_operation_if_enabled(
+                self._log_operation_sure(
                     operation=operation,
                     status="SUCCESS"
                 )
@@ -113,14 +113,14 @@ class HDF5reader_writer:
                     RuntimeError: f"Runtime error: {self.__file_path}",
                     }
                 message = e_dict.get(type(e), f"Unexpected error: {str(e)}")
-                self._log_operation_if_enabled(
+                self._log_operation_sure(
                     operation=operation + f" (Attempt {attempt + 1}/{max_retries})",
                     status="RETRY",
                     message=message,
                     exception=e
                 )
                 if attempt == max_retries - 1:
-                    self._log_operation_if_enabled(
+                    self._log_operation_sure(
                         operation="Open file",
                         status="FAILED",
                         message=f"Max retries exceeded after {max_retries} attempts",
@@ -128,14 +128,14 @@ class HDF5reader_writer:
                     )
                     raise FileNotFoundError(f"File not found: {self.__file_path}") from e
             except Exception as e:
-                self._log_operation_if_enabled(
+                self._log_operation_sure(
                     operation=f"Open file (Attempt {attempt + 1}/{max_retries})",
                     status="FAILED",
                     message=f"Unexpected {type(e).__name__}: {str(e)}",
                     exception=e
                 )
                 if attempt == max_retries - 1:
-                    self._log_operation_if_enabled(
+                    self._log_operation_sure(
                         operation="Open file",
                         status="FAILED",
                         message=f"Max retries exceeded after {max_retries} attempts",
@@ -147,7 +147,7 @@ class HDF5reader_writer:
     def close(self):
         """关闭 HDF5 文件,释放资源"""
         operation = 'close'
-        self._log_operation_if_enabled(
+        self._log_operation_sure(
             operation=operation,
             status="STARTED",
             message=f"File: {self.__file_path}"
@@ -155,12 +155,12 @@ class HDF5reader_writer:
         if self.__dataset is not None:
             try:
                 self.__dataset.close()
-                self._log_operation_if_enabled(
+                self._log_operation_sure(
                     operation=operation,
                     status="SUCCESS"
                 )
             except Exception as e:
-                self._log_operation_if_enabled(
+                self._log_operation_sure(
                     operation=operation,
                     status="FAILED",
                     message=f"Warning: Error closing HDF5 file: {e}"
@@ -184,7 +184,7 @@ class HDF5reader_writer:
             KeyError: 当指定路径不存在时
         """
         operation = f"Get dataset{'/' + group_path if group_path else ''}"
-        self._log_operation_if_enabled(
+        self._log_operation_sure(
             operation=operation,
             status="STARTED",
             message=f"Group path: {group_path}"
@@ -205,7 +205,7 @@ class HDF5reader_writer:
             shape_info = ""       
             if hasattr(target, "shape"):  # 如果是数据集而非组
                 shape_info = f", shape: {target.shape}"
-            self._log_operation_if_enabled(
+            self._log_operation_sure(
                 operation=operation,
                 status="SUCCESS",
                 message=f"Type: {type(target).__name__}{shape_info}"
@@ -213,7 +213,7 @@ class HDF5reader_writer:
             
             return target
         except Exception as e:
-            self._log_operation_if_enabled(
+            self._log_operation_sure(
                 operation=operation,
                 status="FAILED",
                 message="Error: {type(e).__name__}: {str(e)}",
@@ -235,7 +235,7 @@ class HDF5reader_writer:
             ValueError: 如果指定变量不存在于数据集中
         """  
         operation = f"Get variable data: {variable_name}"
-        self._log_operation_if_enabled(
+        self._log_operation_sure(
             operation=operation,
             status="STARTED",
             message=f"File: {self.__file_path}"
@@ -244,13 +244,13 @@ class HDF5reader_writer:
         try:
             dataset = self.get_dataset(group_path=group_path)
             data = dataset[:]  # 获取实际数据
-            self._log_operation_if_enabled(
+            self._log_operation_sure(
                 operation=operation,
                 status="SUCCESS"
             )
             return data
         except Exception as e:
-            self._log_operation_if_enabled(
+            self._log_operation_sure(
                 operation=operation,
                 status="FAILED",
                 message=str(e),
@@ -266,7 +266,7 @@ class HDF5reader_writer:
             dict: 包含全局属性的字典。
         """  
         operation = "Get global attributes"
-        self._log_operation_if_enabled(
+        self._log_operation_sure(
             operation=operation,
             status="STARTED",
             message=f"File: {self.__file_path}"
@@ -274,13 +274,13 @@ class HDF5reader_writer:
         try:
             h5_file = self.get_dataset()
             attributes = dict(h5_file.attrs)
-            self._log_operation_if_enabled(
+            self._log_operation_sure(
                 operation=operation,
                 status="SUCCESS",
             )
             return attributes
         except Exception as e:
-            self._log_operation_if_enabled(
+            self._log_operation_sure(
                 operation=operation,
                 status="FAILED",
                 message=f"{type(e).__name__}: {str(e)}"
@@ -301,7 +301,7 @@ class HDF5reader_writer:
             ValueError: 当指定的数据集不存在于 Observations 组中时抛出异常。
         """   
         operation = f"Get local attributes: {dataset_name}"
-        self._log_operation_if_enabled(
+        self._log_operation_sure(
             operation=operation,
             status="STARTED",
             message=f"File: {self.__file_path}"
@@ -311,7 +311,7 @@ class HDF5reader_writer:
             obs_group = h5_file["Observations"]
             if dataset_name in obs_group:
                 attributes = dict(obs_group[dataset_name].attrs)
-                self._log_operation_if_enabled(
+                self._log_operation_sure(
                     operation=operation,
                     status="SUCCESS",
                     message=f"attributes: {attributes.keys}"
@@ -320,7 +320,7 @@ class HDF5reader_writer:
             else:
                 raise ValueError(f"Dataset '{dataset_name}' not found in the Observations group.")
         except Exception as e:
-            self._log_operation_if_enabled(
+            self._log_operation_sure(
                 operation=operation,
                 status="FAILED",
                 message=f"{type(e).__name__}: {str(e)}"
@@ -330,7 +330,7 @@ class HDF5reader_writer:
     def summary_meteorological(self):
         """读取 HDF5 文件中的气象数据，并打印全局属性的部分信息。"""
         operation="summary"
-        self._log_operation_if_enabled(
+        self._log_operation_sure(
             operation=operation,
             status="STARTED",
             message=f"File: {self.__file_path}"
@@ -343,12 +343,12 @@ class HDF5reader_writer:
             # 进入 'Observations' 组
             obs_group = ds['Observations']
             print("\nObservations 组中的数据集：", list(obs_group.keys()))
-            self._log_operation_if_enabled(
+            self._log_operation_sure(
                 operation=operation,
                 status="SUCCESS",
             )
         except Exception as e:
-            self._log_operation_if_enabled(
+            self._log_operation_sure(
                 operation=operation,
                 status="FAILED",
                 message=f"{type(e).__name__}: {str(e)}"
@@ -380,7 +380,7 @@ class HDF5reader_writer:
         """
         operation="Write meteorological data"
         # 记录操作开始（包含基础参数）
-        self._log_operation_if_enabled(
+        self._log_operation_sure(
             operation=operation,
             status="STARTED",
             message=f"File: {self.__file_path}, Dimensions: "
@@ -389,16 +389,12 @@ class HDF5reader_writer:
         )
         if self.__mode != 'w':
             error_msg = "File must be opened in 'w' mode for writing"
-            self._log_operation_if_enabled(
-                operation=operation,
-                status="FAILED",
-                message=error_msg
-            )
+            self._log_operation_sure(operation, "FAILED", error_msg)
             raise PermissionError(error_msg)
         try:
             if dic_data is None:
                 dic_data = {}
-                self._log_operation_if_enabled(
+                self._log_operation_sure(
                     operation="Parameter check",
                     status="INFO",
                     message="dic_data is None, initialized as empty dict"
@@ -415,32 +411,25 @@ class HDF5reader_writer:
             if time_points is not None:
                 if time_values is None:
                     time_values = np.arange(time_points)  # 默认生成0,1,2,...的时间序列
-                    self._log_operation_if_enabled(
+                    self._log_operation_sure(
                         operation="Time values generation",
                         status="NOTE",
                         message=f"Auto-generated time values (0 to {time_points-1})"
                     )
                 elif len(time_values) != time_points:
                     error_msg = "time_values length must match time_points"
-                    self._log_operation_if_enabled(
-                        operation="Parameter validation",
-                        status="FAILED",
-                        message=error_msg
-                    )
+                    self._log_operation_sure("Parameter validation", "FAILED", error_msg)
                     raise ValueError(error_msg)
                     
             # 生成经纬度数据
             if not (lat_points > 0 and lon_points > 0 and time_points > 0):
                 error_msg = "lat_points, lon_points and time_points must be positive"
-                self._log_operation_if_enabled(
-                    operation="Parameter validation",
-                    status="FAILED",
-                    message=error_msg
+                self._log_operation_sure("Parameter validation","FAILED", error_msg)
                 )
                 raise ValueError(error_msg)
             if not (isinstance(lat_points, int) and isinstance(lon_points, int) and isinstance(time_points, int)):
                 error_msg = "lat_points, lon_points and time_points must be integers"
-                self._log_operation_if_enabled(
+                self._log_operation_sure(
                     operation="Parameter validation",
                     status="FAILED",
                     message=error_msg
@@ -448,7 +437,7 @@ class HDF5reader_writer:
                 raise TypeError(error_msg)
             if lat_min >= lat_max or lon_min >= lon_max:
                 error_msg = "lat_min must be < lat_max and lon_min must be < lon_max"
-                self._log_operation_if_enabled(
+                self._log_operation_sure(
                     operation="Parameter validation",
                     status="FAILED",
                     message=error_msg
@@ -458,14 +447,14 @@ class HDF5reader_writer:
             try:
                 latitudes = np.linspace(lat_min, lat_max, lat_points)
                 longitudes = np.linspace(lon_min, lon_max, lon_points)
-                self._log_operation_if_enabled(
+                self._log_operation_sure(
                     operation="Coordinate generation",
                     status="SUCCESS",
                     message=f"Generated {lat_points}x{lon_points} grid"
                 )
             except TypeError as e:
                 error_msg = f"Input must be numeric: {str(e)}"
-                self._log_operation_if_enabled(
+                self._log_operation_sure(
                     operation="Coordinate generation",
                     status="FAILED",
                     message=error_msg
@@ -477,7 +466,7 @@ class HDF5reader_writer:
             self.__dataset.attrs['DataSource'] = 'Simulated meteorological data'
             self.__dataset.attrs['Description'] = f'meteorological data, include {dic_data.keys()}'
             
-            self._log_operation_if_enabled(
+            self._log_operation_sure(
                 operation="Global attributes",
                 status="NOTE"
             )
@@ -495,7 +484,7 @@ class HDF5reader_writer:
             coord_group.create_dataset('Latitude', data=latitudes)
             coord_group.create_dataset('Longitude', data=longitudes)
             
-            self._log_operation_if_enabled(
+            self._log_operation_sure(
                 operation="Group structure",
                 status="NOTE",
                 message="Created Observations/Coordinates groups"
@@ -506,7 +495,7 @@ class HDF5reader_writer:
             for var_name, var_info in dic_data.items():
                 if not isinstance(var_info, dict):
                     error_msg = f"Variable '{var_name}' info must be a dictionary"
-                    self._log_operation_if_enabled(
+                    self._log_operation_sure(
                         operation=f"Write variable {var_name}",
                         status="FAILED",
                         message=error_msg
@@ -524,7 +513,7 @@ class HDF5reader_writer:
                             f"Data shape mismatch for {var_name}: "
                             f"expected {expected_shape_3d}, got {data.shape}"
                         )
-                        self._log_operation_if_enabled(
+                        self._log_operation_sure(
                             operation=f"Write variable {var_name}",
                             status="FAILED",
                             message=error_msg
@@ -536,32 +525,32 @@ class HDF5reader_writer:
                     dset.attrs["description"] = description
                     
                     vars_written.append(var_name)               
-                    self._log_operation_if_enabled(
+                    self._log_operation_sure(
                         operation=f"Write variable {var_name}",
                         status="SUCCESS",
                         message=f"Shape: {data.shape}, Units: {units}"
                     )
                 except KeyError as e:
-                    self._log_operation_if_enabled(
+                    self._log_operation_sure(
                         operation=f"Write variable {var_name}",
                         status="FAILED",
                         message=f"Missing required key: {str(e)}"
                     )
                     raise
                 except Exception as e:
-                    self._log_operation_if_enabled(
+                    self._log_operation_sure(
                         operation=f"Write variable {var_name}",
                         status="FAILED",
                         message=str(e)
                     )
                     raise
-            self._log_operation_if_enabled(
+            self._log_operation_sure(
                 operation=operation,
                 status="SUCCESS",
                 message=f"Variables written: {vars_written}"
             )
         except Exception as e:
-            self._log_operation_if_enabled(
+            self._log_operation_sure(
                 operation=operation,
                 status="FAILED",
                 message=str(e)
@@ -591,7 +580,7 @@ class HDF5reader_writer:
                 }
         """
         operation = "Append meteorological data"
-        self._log_operation_if_enabled(
+        self._log_operation_sure(
             operation=operation,
             status="STARTED",
             message=f"File: {self.__file_path}, Dimensions: "
@@ -600,7 +589,7 @@ class HDF5reader_writer:
         )
         if self.__mode != 'a':
             error_msg = "File must be opened in 'a' mode for appending"
-            self._log_operation_if_enabled(
+            self._log_operation_sure(
                 operation=operation,
                 status="FAILED",
                 message=error_msg
@@ -609,7 +598,7 @@ class HDF5reader_writer:
         try:
             if dic_data is None:
                 dic_data = {} 
-                self._log_operation_if_enabled(
+                self._log_operation_sure(
                     operation="Parameter check",
                     status="NOTE",
                     message="dic_data is None, initialized as empty dict"
@@ -636,7 +625,7 @@ class HDF5reader_writer:
             for var_name, var_info in dic_data.items():
                 if not isinstance(var_info, dict):
                     error_msg = f"Variable '{var_name}' info must be a dictionary"
-                    self._log_operation_if_enabled(
+                    self._log_operation_sure(
                         operation=f"Append variable {var_name}",
                         status="FAILED",
                         message=error_msg
@@ -653,7 +642,7 @@ class HDF5reader_writer:
                     if data.shape != expected_shape_3d:
                         error_msg = f"Data shape mismatch for {var_name}: "\
                                     f"expected ({lat_points}, {lon_points}), got {data.shape}"
-                        self._log_operation_if_enabled(
+                        self._log_operation_sure(
                             operation=f"Append variable {var_name}",
                             status="FAILED",
                             message=error_msg
@@ -662,7 +651,7 @@ class HDF5reader_writer:
                     
                     if var_name in obs_group:
                         del obs_group[var_name]
-                        self._log_operation_if_enabled(
+                        self._log_operation_sure(
                             operation=f"Append variable {var_name}",
                             status="NOTE",
                             message="Existing dataset deleted before append"
@@ -673,32 +662,32 @@ class HDF5reader_writer:
                     dset.attrs["description"] = description
                     vars_appended.append(var_name)
                     
-                    self._log_operation_if_enabled(
+                    self._log_operation_sure(
                         operation=f"Append variable {var_name}",
                         status="SUCCESS",
                         message=f"Shape: {data.shape}, Units: {units}"
                     )
                 except KeyError as e:
-                    self._log_operation_if_enabled(
+                    self._log_operation_sure(
                         operation=f"Append variable {var_name}",
                         status="FAILED",
                         message=f"Missing required key '{e.args[0]}' in variable '{var_name}'"
                     )
                     raise 
                 except Exception as e:
-                    self._log_operation_if_enabled(
+                    self._log_operation_sure(
                         operation=f"Append variable {var_name}",
                         status="FAILED",
                         message=str(e)
                     )
                     raise 
-            self._log_operation_if_enabled(
+            self._log_operation_sure(
                 operation=operation,
                 status="SUCCESS",
                 message=f"Variables appended: {vars_appended}"
             )
         except Exception as e:
-            self._log_operation_if_enabled(
+            self._log_operation_sure(
                 operation=operation,
                 status="FAILED",
                 message=str(e)
@@ -845,7 +834,7 @@ with HDF5reader_writer("D://test//hdf5_test_2.h5") as hdf5_reader:
     print(f"Hot and humid days: {len(humid_hot)}")
 
 # 测试Converter
-converter = Converter()
+converter = DataConverter()
 
 # 温度转换
 temp_k = converter.convert_temperature(25, from_unit="°C", to_unit="K")

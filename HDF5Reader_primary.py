@@ -318,8 +318,7 @@ class HDF5reader_writer:
             raise RuntimeError("HDF5 file is not open. Use 'with' statement to open the file.")
             
         if len(time_values) != time_points:
-            raise ValueError("time_values length must match time_points")
-                
+            raise ValueError("time_values length must match time_points")       
         if not (lat_points > 0 and lon_points > 0 and time_points > 0):
             raise ValueError("lat_points, lon_points and time_points must be positive")
         if not (isinstance(lat_points, int) and isinstance(lon_points, int) and isinstance(time_points, int)):
@@ -419,8 +418,8 @@ dic_data = {
 
 with HDF5reader_writer("D:/test/hdf5_test_1.h5", 'a') as h5file:
     h5file.append_meteo_hdf5(time_points=time_points,lat_points=lat_points, lon_points=lon_points, 
-                            lat_min=-60, lat_max=-30, lon_min=30, lon_max=60, 
-                            time_values=None, dic_data=dic_data)
+                             lat_min=-60, lat_max=-30, lon_min=30, lon_max=60, 
+                             time_values=None, dic_data=dic_data)
 
 with HDF5reader_writer("D:/test/hdf5_test_1.h5", 'r') as h5file:
     print(f'Wind speed data : {h5file.get_variable_data("WindSpeed")}')
