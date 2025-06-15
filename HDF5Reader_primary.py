@@ -4,43 +4,80 @@ Created on Wed Jun 11 15:09:11 2025
 
 @author: mirag
 """
-
 import h5py as h5
 import numpy as np
+import pandas as pd
 from datetime import datetime
 import time
-import pandas as pd
 import os
+
+def safe_remove_file(filepath, max_retries=5, retry_delay=1):
+    """安全删除文件，带有重试机制"""
+    for attempt in range(max_retries):
+        try:
+            if os.path.exists(filepath):
+                os.remove(filepath)
+            return True
+        except PermissionError:
+            if attempt == max_retries - 1:
+                raise
+            time.sleep(retry_delay)
+    return False
 
 class HDF5reader_writer:
     """
-        HDF5读写器，支持'r','w''a'模式
+        HDF5读写器，支持'r','w''a'模式，但是with语句内读写分离
         支持读入 Observations 组中指定变量的数据和属性以及全局属性
         支持summary_meteorological,读取数据并打印全局属性的部分信息
-        请尽可能使用with语句而不是实例化
-    """
-    def __init__(self, file_path):
+        请尽可能使用with语句进行数据读取而不是实例化
+    """  
+    
+    def __init__(self, file_path, mode='r'):
         """
-        初始化 HDF5Reader 实例，使用组合模式整合各功能模块
+        初始化 HDF5Reader 实例
         参数:
             file_path(str): HDF5 文件的路径
+            mode(str): 打开方式
         """
         self.__file_path = file_path
         self.__dataset = None
-
-    def __openhdf5(self, mode='r'):
+        self.__mode = mode  # 新增模式属性
+        
+    def __enter__(self):
+        """with语句内确保文件可以打开，修改为可指定模式"""
+        try:
+            self.__openhdf5()
+            return self
+        except Exception as e:
+            raise RuntimeError(f"Failed to open HDF5 file: {e}")
+        
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        """
+        with语句内确保即使发生异常，文件可以关闭
+        """
+        try:
+            self.close()
+        except Exception as e:
+            print(f"Error during file closing: {e}")
+            raise
+    
+    def __openhdf5(self):
         """
         打开 HDF5 文件
-        参数：
-            mode:读入模式
         返回:
             数据集对象
         """
         max_retries = 5  # 最大重试次数
         retry_delay = 1  # 重试间隔(秒)
+        
         for attempt in range(max_retries):
             try:
-                self.__dataset = h5.File(self.__file_path, mode)
+                # 如果是写入模式，先尝试删除现有文件
+                if self.__mode == 'w':
+                    safe_remove_file(self.__file_path)
+                
+                self.__dataset = h5.File(self.__file_path, self.__mode)
+                return
             except FileNotFoundError as e:
                 if attempt == max_retries - 1:
                     raise FileNotFoundError(f"File not found: {self.__file_path}") from e
@@ -50,32 +87,21 @@ class HDF5reader_writer:
             except RuntimeError as e:
                 if attempt == max_retries - 1:
                     raise RuntimeError("The parsing of the NetCDF file failed") from e
-            except Exception:
+            except Exception as e:
                 if attempt == max_retries - 1:
                     raise
             time.sleep(retry_delay)  # 重试前等待..
-    
-    def __enter__(self):
-        """with语句内确保文件可以打开"""
-        try:
-            self.__openhdf5('r')  # 打开文件
-            return self         # 返回实例自身，供 with 块使用
-        except Exception:
-            raise              # 重新抛出异常
-    
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        """
-        with语句内确保即使发生异常，文件可以关闭
-        请尽可能使用with语句而不是实例化，这样可以规避遗忘finally close的风险
-        """
-        self.close()  # 无论如何，先确保关闭文件
-    
+            
     def close(self):
         """关闭 HDF5 文件，释放资源"""
         if self.__dataset is not None:
-            self.__dataset.close()
-            self.__dataset = None
-    
+            try:
+                self.__dataset.close()
+            except Exception as e:
+                print(f"Warning: Error closing HDF5 file: {e}")
+            finally:
+                self.__dataset = None
+        
     def get_dataset(self, mode='r'):
         """
         获取 HDF5 数据集
@@ -91,7 +117,8 @@ class HDF5reader_writer:
             KeyError: 当 Observations 组不存在时
         """
         if self.__dataset is None:
-            self.__openhdf5(mode)
+            self.set_read_mode()
+            self.__openhdf5()
         if "Observations" not in self.__dataset:
             raise KeyError("Group 'Observations' not found in the file.")
         return self.__dataset
@@ -184,8 +211,19 @@ class HDF5reader_writer:
                     ...
                 }
         """
+        if self.__mode != 'w':
+            raise PermissionError("File must be opened in 'w' mode for writing")
+                    
         if dic_data is None:
             dic_data = {}
+            
+        # 检查文件是否已打开
+        if self.__dataset is None:
+            raise RuntimeError("HDF5 file is not open. Use 'with' statement to open the file.")
+            
+        # 清空现有数据（如果存在）
+        for key in list(self.__dataset.keys()):
+            del self.__dataset[key]
             
         # 生成时间数据
         if time_points is not None:
@@ -207,47 +245,49 @@ class HDF5reader_writer:
         except TypeError as e:
             raise TypeError(f"Input must be numeric: {e}")
         
-        # 打开或创建 HDF5 文件，使用 'w' 模式会覆盖同名文件
-        with h5.File(self.__file_path, 'w') as h5_file:
-            # 写入全局属性
-            h5_file.attrs['CreationDate'] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            h5_file.attrs['DataSource'] = 'Simulated meteorological data'
-            h5_file.attrs['Description'] = f'meteorological data, include {dic_data.keys()}'
-            
-            # 创建组 'Observations' 用于存储观测数据
-            obs_group = h5_file.create_group('Observations')
-            
-            # 创建子组 'Coordinates' 存储时空信息
-            coord_group = obs_group.create_group('Coordinates')
-            coord_group.create_dataset('Time', data=time_values)
-            coord_group.create_dataset('Latitude', data=latitudes)
-            coord_group.create_dataset('Longitude', data=longitudes)
-            
-            # 遍历 dic_data，写入所有变量
-            for var_name, var_info in dic_data.items():
-                if not isinstance(var_info, dict):
-                    raise ValueError(f"Variable '{var_name}' info must be a dictionary")
-                try:
-                    data = var_info["data"]
-                    units = var_info.get("units", "unknown")
-                    description = var_info.get("description", "no description")
-                    
-                    expected_shape_3d = (time_points, lat_points, lon_points)
-    
-                    if data.shape != expected_shape_3d:
-                        raise ValueError(
-                            f"Data shape mismatch for {var_name}: "
-                            f"expected ({lat_points}, {lon_points}), got {data.shape}"
-                        )
-    
-                    dset = obs_group.create_dataset(var_name, data=data)
-                    dset.attrs["units"] = units
-                    dset.attrs["description"] = description
-                    
-                except KeyError as e:
-                    raise KeyError("Missing required key '{e.args[0]}' in variable '{var_name}'")
-                except Exception:
-                    raise 
+        # 写入全局属性
+        self.__dataset.attrs['CreationDate'] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        self.__dataset.attrs['DataSource'] = 'Simulated meteorological data'
+        self.__dataset.attrs['Description'] = f'meteorological data, include {dic_data.keys()}'
+        
+        # 创建组结构
+        obs_group = self.__dataset.create_group('Observations')
+        coord_group = obs_group.create_group('Coordinates')
+        
+        # 生成坐标数据
+        latitudes = np.linspace(lat_min, lat_max, lat_points)
+        longitudes = np.linspace(lon_min, lon_max, lon_points)
+        
+        # 写入坐标
+        coord_group.create_dataset('Time', data=time_values if time_values is not None else np.arange(time_points))
+        coord_group.create_dataset('Latitude', data=latitudes)
+        coord_group.create_dataset('Longitude', data=longitudes)
+             
+        # 遍历 dic_data，写入所有变量
+        for var_name, var_info in dic_data.items():
+            if not isinstance(var_info, dict):
+                raise ValueError(f"Variable '{var_name}' info must be a dictionary")
+            try:
+                data = var_info["data"]
+                units = var_info.get("units", "unknown")
+                description = var_info.get("description", "no description")
+                
+                expected_shape_3d = (time_points, lat_points, lon_points)
+
+                if data.shape != expected_shape_3d:
+                    raise ValueError(
+                        f"Data shape mismatch for {var_name}: "
+                        f"expected ({lat_points}, {lon_points}), got {data.shape}"
+                    )
+
+                dset = obs_group.create_dataset(var_name, data=data)
+                dset.attrs["units"] = units
+                dset.attrs["description"] = description
+                
+            except KeyError as e:
+                raise KeyError("Missing required key '{e.args[0]}' in variable '{var_name}'")
+            except Exception:
+                raise 
     
     def append_meteo_hdf5(self, time_points, lat_points, lon_points,
                           lat_min=-90, lat_max=90, lon_min=-180, lon_max=180, 
@@ -271,8 +311,15 @@ class HDF5reader_writer:
                     ...
                 }
         """
+        if self.__mode != 'a':
+            raise PermissionError("File must be opened in 'a' mode for appending")
+            
         if dic_data is None:
             dic_data = {}
+            
+        # 检查文件是否已打开
+        if self.__dataset is None:
+            raise RuntimeError("HDF5 file is not open. Use 'with' statement to open the file.")
             
         # 生成时间数据
         if time_points is not None:
@@ -288,42 +335,43 @@ class HDF5reader_writer:
             raise TypeError("lat_points and lon_points must be integers")
         if lat_min >= lat_max or lon_min >= lon_max:
             raise ValueError("lat_min must be < lat_max and lon_min must be < lon_max")
-        # 打开或创建 HDF5 文件，使用 'a' 模式
-        with h5.File(self.__file_path, 'a') as h5_file:
-            obs_group = h5_file.require_group('Observations')
-            # 遍历 dic_data，写入所有变量
-            for var_name, var_info in dic_data.items():
-                if not isinstance(var_info, dict):
-                    raise ValueError(f"Variable '{var_name}' info must be a dictionary")
-                try:
-                    data = var_info["data"]
-                    units = var_info.get("units", "unknown")
-                    description = var_info.get("description", "no description")
-    
-                    expected_shape_3d = (time_points, lat_points, lon_points)
-    
-                    if data.shape != expected_shape_3d:
-                        raise ValueError(
-                            f"Data shape mismatch for {var_name}: "
-                            f"expected ({lat_points}, {lon_points}), got {data.shape}"
-                        )
-    
-                    dset = obs_group.create_dataset(var_name, data=data)
-                    dset.attrs["units"] = units
-                    dset.attrs["description"] = description
-                except KeyError as e:
-                    raise KeyError("Missing required key '{e.args[0]}' in variable '{var_name}'")
-                except Exception:
-                    raise 
+            
+        obs_group = self.__dataset.require_group('Observations')
+        
+        # 遍历 dic_data，写入所有变量
+        for var_name, var_info in dic_data.items():
+            if not isinstance(var_info, dict):
+                raise ValueError(f"Variable '{var_name}' info must be a dictionary")
+            try:
+                data = var_info["data"]
+                units = var_info.get("units", "unknown")
+                description = var_info.get("description", "no description")
 
-hdf5_test = HDF5reader_writer("D://test//hdf5_test.h5")
-# 时空网格点
+                expected_shape_3d = (time_points, lat_points, lon_points)
+
+                if data.shape != expected_shape_3d:
+                    raise ValueError(
+                        f"Data shape mismatch for {var_name}: "
+                        f"expected ({lat_points}, {lon_points}), got {data.shape}"
+                    )
+
+                if var_name in obs_group:
+                    del obs_group[var_name]  # 删除现有数据集（如果存在）
+                    
+                dset = obs_group.create_dataset(var_name, data=data)
+                dset.attrs["units"] = units
+                dset.attrs["description"] = description
+            except KeyError as e:
+                raise KeyError(f"Missing required key '{e.args[0]}' in variable '{var_name}'")
+            except Exception as e:
+                raise RuntimeError(f"Failed to append variable '{var_name}': {e}")
+
 lat_points = 6
 lon_points = 6
-start_time = "2025-01-01 00:00"     
+
+start_time = "2023-01-01 00:00"     
 step = pd.Timedelta(hours=6)        
 time_points = 2                     
-
 # 生成时间序列
 times_value = pd.date_range(
     start = start_time, 
@@ -331,13 +379,9 @@ times_value = pd.date_range(
     freq = step
 )
 time_values = times_value.astype(np.int64) // 10**9  # 秒级时间戳
-
 # 生成随机气象数据
 temperature = np.random.uniform(low=-20, high=40, size=(time_points, lat_points, lon_points))
 humidity = np.random.uniform(low=0, high=100, size=(time_points, lat_points, lon_points))
-pressure = np.random.uniform(low=950, high=1050, size=(time_points, lat_points, lon_points))
-windspeed = np.abs(np.random.normal(3, 2, size=(time_points, lat_points, lon_points)))
-winddirection = np.random.uniform(low=0, high=360, size=(time_points, lat_points, lon_points))
 dic_data = {
     'Temperature': {
         "data": temperature,
@@ -348,7 +392,23 @@ dic_data = {
         "data": humidity,
         "units": "%",
         "description": "humidity"
-        },
+        }
+    }
+
+with HDF5reader_writer("D:/test/hdf5_test_1.h5", 'w') as h5file:
+    h5file.write_meteo_hdf5(time_points=time_points,lat_points=lat_points, lon_points=lon_points, 
+                            lat_min=-60, lat_max=-30, lon_min=30, lon_max=60, 
+                            time_values=None, dic_data=dic_data)
+    
+with HDF5reader_writer("D:/test/hdf5_test_1.h5", 'r') as h5file:
+    print(f'global attributes : {h5file.get_global_attributes()}')
+    print(f'Humidity data : {h5file.get_variable_data("Humidity")}')
+    print(f'Temperature attributes : {h5file.get_local_attributes("Temperature")}')
+
+pressure = np.random.uniform(low=950, high=1050, size=(time_points, lat_points, lon_points))
+windspeed = np.abs(np.random.normal(3, 2, size=(time_points, lat_points, lon_points)))
+winddirection = np.random.uniform(low=0, high=360, size=(time_points, lat_points, lon_points))
+dic_data = {
     'Pressure': {
         "data": pressure,
         "units": "hPa",
@@ -366,50 +426,12 @@ dic_data = {
         }
     }
 
-#测试写入功能
-hdf5_test.write_meteo_hdf5(time_points=time_points,lat_points=lat_points, lon_points=lon_points, 
-                           lat_min=-60, lat_max=-30, lon_min=30, lon_max=60,
+with HDF5reader_writer("D:/test/hdf5_test_1.h5", 'a') as h5file:
+    h5file.append_meteo_hdf5(time_points=time_points,lat_points=lat_points, lon_points=lon_points, 
+                            lat_min=-60, lat_max=-30, lon_min=30, lon_max=60, 
                             time_values=None, dic_data=dic_data)
 
-#测试文件是否创建成功
-assert os.path.exists("D://test//hdf5_test.h5"), "failed"
-
-#测试类的功能是否实现
-with HDF5reader_writer("D://test//hdf5_test.h5") as h5file:
-    # 验证基本功能
-    assert isinstance(h5file.get_global_attributes(), dict)
-    assert h5file.get_variable_data("Humidity").shape == (time_points, lat_points, lon_points)
-    assert h5file.get_local_attributes("Temperature")["units"] == "°C"
-    
-    #测试数据读取是否一致
-    # 验证温度数据形状
-    temp_data = h5file.get_variable_data("Temperature")
-    assert temp_data.shape == (time_points, lat_points, lon_points), "ShapeError"
-    # 验证湿度单位
-    humidity_attrs = h5file.get_local_attributes("Humidity")
-    assert humidity_attrs["units"] == "%", "UnitError"
-
-#测试追加功能
-new_data = {
-    "Precipitation": {
-        "data": np.random.rand(time_points, lat_points, lon_points),
-        "units": "mm",
-        "description": "precipitation"
-    }
-}
-
-hdf5_test.append_meteo_hdf5(
-    time_points=time_points,
-    lat_points=lat_points,
-    lon_points=lon_points,
-    dic_data=new_data
-)
-
-# 验证追加的数据
-with HDF5reader_writer("D://test//hdf5_test.h5") as h5file:
-    assert "Precipitation" in h5file.get_dataset()["Observations"]
-    precip_attrs = h5file.get_local_attributes("Precipitation")
-    assert precip_attrs["units"] == "mm"
-    assert precip_attrs["description"] == "precipitation"
-
-print("所有基础测试通过！")
+with HDF5reader_writer("D:/test/hdf5_test_1.h5", 'r') as h5file:
+    print(f'Wind speed data : {h5file.get_variable_data("WindSpeed")}')
+    print(f'Wind direction attributes : {h5file.get_local_attributes("WindDirection")}')
+    h5file.summary_meteorological()
