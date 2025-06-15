@@ -909,7 +909,7 @@ class DataAnalyzer:
             )
             raise
             
-    def get_quantile_slice(self, variable_name: str,  quantile: float = 0.25, 
+    def get_quantile_slice(self, variable_name: str, quantile: float = 0.25, 
                            time_slice: slice = None, 
                            lat_slice: slice = None, lon_slice: slice = None) -> float:
         """获取指定分位数"""
@@ -1003,10 +1003,8 @@ class DataAnalyzer:
             lon_slice=lon_slice
         )
     
-    def get_custom_stat(self, variable_name: str, 
-                        stat_func: Callable, stat_name: str, 
-                        time_slice: slice = None, 
-                        lat_slice: slice = None, lon_slice: slice = None, 
+    def get_custom_stat(self, variable_name: str, stat_func: Callable, stat_name: str, 
+                        time_slice: slice = None, lat_slice: slice = None, lon_slice: slice = None, 
                         **kwargs) -> Any:
         """自定义统计计算"""
         return self.__calculate_statistic(

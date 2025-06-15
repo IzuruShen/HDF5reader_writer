@@ -52,9 +52,7 @@ class HDF5reader_writer:
             raise RuntimeError(f"Failed to open HDF5 file: {e}")
         
     def __exit__(self, exc_type, exc_val, exc_tb):
-        """
-        with语句内确保即使发生异常，文件可以关闭
-        """
+        """ with语句内确保即使发生异常，文件可以关闭"""
         try:
             self.close()
         except Exception as e:
@@ -186,9 +184,8 @@ class HDF5reader_writer:
     
     # 气象数据操作方法
     def write_meteo_hdf5(self, time_points, lat_points, lon_points, 
-                         lat_min=-90, lat_max=90, lon_min=-180, lon_max=180,
-                         time_values=None,
-                         dic_data=None):
+                         lat_min=-90, lat_max=90, lon_min=-180, lon_max=180, 
+                         time_values=None, dic_data=None):
         """
         创建一个 HDF5 文件或完全覆盖之前的文件，并写入数据
         所有变量均包含 units 和 description 属性。
@@ -285,10 +282,9 @@ class HDF5reader_writer:
             except Exception:
                 raise 
     
-    def append_meteo_hdf5(self, time_points, lat_points, lon_points,
+    def append_meteo_hdf5(self, time_points, lat_points, lon_points, 
                           lat_min=-90, lat_max=90, lon_min=-180, lon_max=180, 
-                          time_values=None, 
-                          dic_data=None):
+                          time_values=None, dic_data=None):
         """
         在一个已有的 HDF5 文件之上追加 Observations 内的数据，或创建一个 HDF5 文件并写入数据
         所有变量均包含 units 和 description 属性。
