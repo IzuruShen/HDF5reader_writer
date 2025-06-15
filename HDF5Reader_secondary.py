@@ -4,13 +4,26 @@ Created on Wed Jun 11 20:45:11 2025
 
 @author: mirag
 """
-
 import h5py as h5
 import numpy as np
 from datetime import datetime
 import time
 from typing import Optional, Dict, Any  # 确保所有需要的类型提示都已导入
 from components import DataTransformer, Converter, Logger, DataPreprocessor, DataAnalyzer, TimeResampler, DataFilter
+import os
+
+def safe_remove_file(filepath, max_retries=5, retry_delay=1):
+    """安全删除文件，带有重试机制"""
+    for attempt in range(max_retries):
+        try:
+            if os.path.exists(filepath):
+                os.remove(filepath)
+            return True
+        except PermissionError:
+            if attempt == max_retries - 1:
+                raise
+            time.sleep(retry_delay)
+    return False
 
 class HDF5reader_writer:
     """
@@ -19,7 +32,7 @@ class HDF5reader_writer:
     支持summary_meteorological,读取数据并打印全局属性的部分信息
     请尽可能使用with语句而不是实例化
     """
-    def __init__(self, file_path: str, enable_logging: bool = True):
+    def __init__(self, file_path: str, mode: str ='r', enable_logging: bool = True):
         """
         初始化 HDF5Reader 实例，使用组合模式整合各功能模块
         
@@ -29,6 +42,7 @@ class HDF5reader_writer:
         """
         self.__file_path = file_path
         self.__dataset = None
+        self.__mode = mode
         
         # 组合功能组件
         self.converter = Converter()                   # 单位转换
@@ -38,6 +52,25 @@ class HDF5reader_writer:
         self.dataanalyzer = DataAnalyzer(self)
         self.timeresampler = TimeResampler(self)
         self.datafilier = DataFilter(self)
+
+    def __enter__(self):
+        """with语句内确保文件可以打开"""
+        try:
+            self.__openhdf5()  # 打开文件
+            return self         # 返回实例自身，供 with 块使用
+        except Exception as e:
+            raise RuntimeError(f"Failed to open HDF5 file: {e}")             # 重新抛出异常
+    
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        """
+        with语句内确保即使发生异常，文件可以关闭
+        请尽可能使用with语句而不是实例化，这样可以规避遗忘finally close的风险
+        """
+        try:
+            self.close()  # 无论如何，先确保关闭文件
+        except Exception as e:
+            print(f"Error during file closing: {e}")
+            raise
     
     # 辅助方法：简化日志调用
     def _log_operation_if_enabled(self, **kwargs):
@@ -45,11 +78,10 @@ class HDF5reader_writer:
         if hasattr(self, '_logger') and self._logger is not None:   # hasattr(self, '_logger'):检查对象 self 是否拥有名为 '_logger' 的属性
             self._logger.log_operation(**kwargs)
     
-    def __openhdf5(self, mode='r'):
+    def __openhdf5(self):
         """
         打开 HDF5 文件
-        参数：
-            mode(str): 读入模式
+        
         返回:
             数据集对象
         """
@@ -63,18 +95,24 @@ class HDF5reader_writer:
                     status="STARTED",
                     message=f"File: {self.__file_path}"
                 )
-                self.__dataset = h5.File(self.__file_path, mode)
+                
+                # 如果是写入模式，先尝试删除现有文件
+                if self.__mode == 'w':
+                    safe_remove_file(self.__file_path)
+                self.__dataset = h5.File(self.__file_path, self.__mode)
+                
                 self._log_operation_if_enabled(
                     operation=operation,
                     status="SUCCESS"
                 )
+                return
             except (FileNotFoundError, PermissionError, RuntimeError) as e:
                 e_dict={
                     FileNotFoundError: f"File not found: {self.__file_path}",
                     PermissionError: f"Permission error: {self.__file_path}",
                     RuntimeError: f"Runtime error: {self.__file_path}",
                     }
-                message=e_dict.get(e)
+                message = e_dict.get(type(e), f"Unexpected error: {str(e)}")
                 self._log_operation_if_enabled(
                     operation=operation + f" (Attempt {attempt + 1}/{max_retries})",
                     status="RETRY",
@@ -106,43 +144,37 @@ class HDF5reader_writer:
                     raise
             time.sleep(retry_delay)  # 重试前等待..
     
-    def __enter__(self):
-        """with语句内确保文件可以打开"""
-        try:
-            self.__openhdf5('r')  # 打开文件
-            return self         # 返回实例自身，供 with 块使用
-        except Exception:
-            raise              # 重新抛出异常
-    
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        """
-        with语句内确保即使发生异常，文件可以关闭
-        请尽可能使用with语句而不是实例化，这样可以规避遗忘finally close的风险
-        """
-        self.close()  # 无论如何，先确保关闭文件
-    
     def close(self):
         """关闭 HDF5 文件,释放资源"""
+        operation = 'close'
         self._log_operation_if_enabled(
-            operation="close",
+            operation=operation,
             status="STARTED",
             message=f"File: {self.__file_path}"
         )
         if self.__dataset is not None:
-            self.__dataset.close()
-            self.__dataset = None
-        self._log_operation_if_enabled(
-            operation="close",
-            status="SUCCESS"
-        )
+            try:
+                self.__dataset.close()
+                self._log_operation_if_enabled(
+                    operation=operation,
+                    status="SUCCESS"
+                )
+            except Exception as e:
+                self._log_operation_if_enabled(
+                    operation=operation,
+                    status="FAILED",
+                    message=f"Warning: Error closing HDF5 file: {e}"
+                )
+                raise
+            finally:
+                self.__dataset = None
     
-    def get_dataset(self, mode: str = 'r', group_path: Optional[str] = None):
+    def get_dataset(self, group_path: Optional[str] = None):
         """
         获取 HDF5 数据集或指定组
         如果文件尚未打开,则自动调用 open() 打开文件。
         
         参数：
-            mode:读入模式,一般默认'r'
             group_path: 可选，如"Observations/Group1"，默认读全
             
         返回:
@@ -159,7 +191,7 @@ class HDF5reader_writer:
         )
         try:
             if self.__dataset is None:
-                self.__openhdf5(mode)
+                self.__openhdf5()
             if "Observations" not in self.__dataset:
                 raise KeyError("Group 'Observations' not found in the file.")
             

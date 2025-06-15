@@ -26,10 +26,10 @@ def safe_remove_file(filepath, max_retries=5, retry_delay=1):
 
 class HDF5reader_writer:
     """
-        HDF5读写器，支持'r','w''a'模式，但是with语句内读写分离
-        支持读入 Observations 组中指定变量的数据和属性以及全局属性
-        支持summary_meteorological,读取数据并打印全局属性的部分信息
-        请尽可能使用with语句进行数据读取而不是实例化
+    HDF5读写器，支持'r','w''a'模式，但是with语句内读写分离
+    支持读入 Observations 组中指定变量的数据和属性以及全局属性
+    支持summary_meteorological,读取数据并打印全局属性的部分信息
+    请尽可能使用with语句进行数据读取而不是实例化
     """  
     
     def __init__(self, file_path, mode='r'):
@@ -102,13 +102,10 @@ class HDF5reader_writer:
             finally:
                 self.__dataset = None
         
-    def get_dataset(self, mode='r'):
+    def get_dataset(self):
         """
         获取 HDF5 数据集
         如果文件尚未打开，则自动调用 open() 打开文件。
-        
-        参数：
-            mode:读入模式，一般默认'r'
             
         返回:
             dataset: HDF5 数据集对象
@@ -117,7 +114,6 @@ class HDF5reader_writer:
             KeyError: 当 Observations 组不存在时
         """
         if self.__dataset is None:
-            self.set_read_mode()
             self.__openhdf5()
         if "Observations" not in self.__dataset:
             raise KeyError("Group 'Observations' not found in the file.")
@@ -233,10 +229,10 @@ class HDF5reader_writer:
                 raise ValueError("time_values length must match time_points")
                 
         # 生成经纬度数据
-        if not (lat_points > 0 and lon_points > 0):
-            raise ValueError("lat_points and lon_points must be positive")
-        if not (isinstance(lat_points, int) and isinstance(lon_points, int)):
-            raise TypeError("lat_points and lon_points must be integers")
+        if not (lat_points > 0 and lon_points > 0 and time_points > 0):
+            raise ValueError("lat_points, lon_points and time_points must be positive")
+        if not (isinstance(lat_points, int) and isinstance(lon_points, int) and isinstance(time_points, int)):
+            raise TypeError("lat_points, lon_points and time_points must be integers")
         if lat_min >= lat_max or lon_min >= lon_max:
             raise ValueError("lat_min must be < lat_max and lon_min must be < lon_max")
         try:
