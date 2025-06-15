@@ -9,7 +9,7 @@ import numpy as np
 from datetime import datetime
 import time
 from typing import Optional, Dict, Any  # 确保所有需要的类型提示都已导入
-from components import DataTransformer, Converter, Logger, DataPreprocessor, DataAnalyzer, TimeResampler, DataFilter
+from components import DataTransformer, DataConverter, Logger, DataPreprocessor, DataAnalyzer, TimeResampler, DataFilter
 import os
 
 def safe_remove_file(filepath, max_retries=5, retry_delay=1):
@@ -45,7 +45,7 @@ class HDF5reader_writer:
         self.__mode = mode
         
         # 组合功能组件
-        self.converter = Converter()                   # 单位转换
+        self.converter = DataConverter()                   # 单位转换
         self._logger = Logger() if enable_logging else None  # 可选日志
         self.pdtransform = DataTransformer(self)         # 数据转换（需传入主类实例）
         self.datacleaner = DataPreprocessor(self)

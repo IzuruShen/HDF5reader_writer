@@ -4,17 +4,16 @@ Created on Wed Jun 11 17:01:56 2025
 
 @author: mirag
 """
-
 import pandas as pd
 import numpy as np
 from scipy.constants import g as g0  # 标准重力加速度
 import logging
 from logging.handlers import RotatingFileHandler
-from typing import Optional, Union, Dict, List, Any, Callable, Sequence, Tuple  # 确保所有需要的类型提示都已导入
+from typing import Union, Dict, List, Any, Callable, Sequence, Tuple  # 确保所有需要的类型提示都已导入
 import operator
 
 # ---------------------- 单位转换组件 ----------------------
-class Converter:
+class DataConverter:
     """简单静态数据转换"""
     @staticmethod
     def convert_temperature(values, from_unit="K", to_unit="°C"):
@@ -61,11 +60,6 @@ class Converter:
         if key in converters:
             return converters[key](values)
         raise ValueError(f"Unsupported conversion: {from_unit} → {to_unit}")
-    
-    @staticmethod
-    def convert_datetime(time_array):
-        """将时间戳转为datetime对象"""
-        return pd.to_datetime(time_array)
 
 # ---------------------- 日志组件 ----------------------
 class Logger:

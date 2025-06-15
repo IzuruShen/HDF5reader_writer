@@ -4,7 +4,6 @@ Created on Sat Jun 14 18:18:35 2025
 
 @author: mirag
 """
-
 from abc import ABC, abstractmethod
 from typing import Dict, Any, Optional
 import numpy as np
@@ -12,7 +11,7 @@ import pandas as pd
 import h5py as h5
 from datetime import datetime
 import time
-from components import DataTransformer, Converter, Logger, DataPreprocessor, DataAnalyzer, TimeResampler, DataFilter
+from components import DataTransformer, DataConverter, Logger, DataPreprocessor, DataAnalyzer, TimeResampler, DataFilter
 import os
 
 def safe_remove_file(filepath, max_retries=5, retry_delay=1):
@@ -107,7 +106,7 @@ class HDF5ReaderWriter(NetCDF_HDF_Base):
         self.__mode = mode
         
         # 组合功能组件
-        self.converter = Converter()
+        self.converter = DataConverter()
         self._logger = Logger() if enable_logging else None
         self.pdtransform = DataTransformer(self)
         self.datacleaner = DataPreprocessor(self)
