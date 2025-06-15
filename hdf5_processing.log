@@ -1,0 +1,418 @@
+2025-06-15 14:53:35,211 - DEBUG - Open HDF5 file - STARTED: File: D:/test/hdf5_test_1.h5
+2025-06-15 14:53:35,214 - INFO - Open HDF5 file - SUCCESS
+2025-06-15 14:53:35,214 - DEBUG - Append meteorological data - STARTED: File: D:/test/hdf5_test_1.h5, Dimensions: time=2,lat=6, lon=6 | Variables: ['Temperature', 'Humidity', 'Pressure', 'WindSpeed', 'WindDirection']
+2025-06-15 14:53:35,214 - INFO - Group access - SUCCESS: Accessed Observations group
+2025-06-15 14:53:35,216 - INFO - Append variable Temperature - SUCCESS: Shape: (2, 6, 6), Units: °C
+2025-06-15 14:53:35,218 - INFO - Append variable Humidity - SUCCESS: Shape: (2, 6, 6), Units: %
+2025-06-15 14:53:35,220 - INFO - Append variable Pressure - SUCCESS: Shape: (2, 6, 6), Units: hPa
+2025-06-15 14:53:35,220 - INFO - Append variable WindSpeed - SUCCESS: Shape: (2, 6, 6), Units: m/s
+2025-06-15 14:53:35,220 - INFO - Append variable WindDirection - SUCCESS: Shape: (2, 6, 6), Units: °
+2025-06-15 14:53:35,220 - INFO - Append meteorological data - SUCCESS: Variables appended: ['Temperature', 'Humidity', 'Pressure', 'WindSpeed', 'WindDirection']
+2025-06-15 14:53:35,220 - DEBUG - close - STARTED: File: D:/test/hdf5_test_1.h5
+2025-06-15 14:53:35,222 - INFO - close - SUCCESS
+2025-06-15 14:53:35,222 - DEBUG - Open HDF5 file - STARTED: File: D://test//hdf5_test.h5
+2025-06-15 14:53:35,224 - INFO - Open HDF5 file (Attempt 1/5) - RETRY: File not found: D://test//hdf5_test.h5 | Exception: FileNotFoundError([Errno 2] Unable to synchronously open file (unable to open file: name = 'D://test//hdf5_test.h5', errno = 2, error message = 'No such file or directory', flags = 0, o_flags = 0))
+2025-06-15 14:53:36,225 - DEBUG - Open HDF5 file - STARTED: File: D://test//hdf5_test.h5
+2025-06-15 14:53:36,225 - INFO - Open HDF5 file (Attempt 2/5) - RETRY: File not found: D://test//hdf5_test.h5 | Exception: FileNotFoundError([Errno 2] Unable to synchronously open file (unable to open file: name = 'D://test//hdf5_test.h5', errno = 2, error message = 'No such file or directory', flags = 0, o_flags = 0))
+2025-06-15 14:53:37,227 - DEBUG - Open HDF5 file - STARTED: File: D://test//hdf5_test.h5
+2025-06-15 14:53:37,227 - INFO - Open HDF5 file (Attempt 3/5) - RETRY: File not found: D://test//hdf5_test.h5 | Exception: FileNotFoundError([Errno 2] Unable to synchronously open file (unable to open file: name = 'D://test//hdf5_test.h5', errno = 2, error message = 'No such file or directory', flags = 0, o_flags = 0))
+2025-06-15 14:53:38,230 - DEBUG - Open HDF5 file - STARTED: File: D://test//hdf5_test.h5
+2025-06-15 14:53:38,230 - INFO - Open HDF5 file (Attempt 4/5) - RETRY: File not found: D://test//hdf5_test.h5 | Exception: FileNotFoundError([Errno 2] Unable to synchronously open file (unable to open file: name = 'D://test//hdf5_test.h5', errno = 2, error message = 'No such file or directory', flags = 0, o_flags = 0))
+2025-06-15 14:53:39,231 - DEBUG - Open HDF5 file - STARTED: File: D://test//hdf5_test.h5
+2025-06-15 14:53:39,231 - INFO - Open HDF5 file (Attempt 5/5) - RETRY: File not found: D://test//hdf5_test.h5 | Exception: FileNotFoundError([Errno 2] Unable to synchronously open file (unable to open file: name = 'D://test//hdf5_test.h5', errno = 2, error message = 'No such file or directory', flags = 0, o_flags = 0))
+2025-06-15 14:53:39,231 - ERROR - Open file - FAILED: Max retries exceeded after 5 attempts | Exception: FileNotFoundError([Errno 2] Unable to synchronously open file (unable to open file: name = 'D://test//hdf5_test.h5', errno = 2, error message = 'No such file or directory', flags = 0, o_flags = 0))
+2025-06-15 14:54:02,822 - DEBUG - Open HDF5 file - STARTED: File: D:/test/hdf5_test_1.h5
+2025-06-15 14:54:02,822 - INFO - Open HDF5 file - SUCCESS
+2025-06-15 14:54:02,822 - DEBUG - Append meteorological data - STARTED: File: D:/test/hdf5_test_1.h5, Dimensions: time=2,lat=6, lon=6 | Variables: ['Temperature', 'Humidity', 'Pressure', 'WindSpeed', 'WindDirection']
+2025-06-15 14:54:02,822 - INFO - Group access - SUCCESS: Accessed Observations group
+2025-06-15 14:54:02,822 - INFO - Append variable Temperature - SUCCESS: Shape: (2, 6, 6), Units: °C
+2025-06-15 14:54:02,838 - INFO - Append variable Humidity - SUCCESS: Shape: (2, 6, 6), Units: %
+2025-06-15 14:54:02,838 - INFO - Append variable Pressure - SUCCESS: Shape: (2, 6, 6), Units: hPa
+2025-06-15 14:54:02,838 - INFO - Append variable WindSpeed - SUCCESS: Shape: (2, 6, 6), Units: m/s
+2025-06-15 14:54:02,838 - INFO - Append variable WindDirection - SUCCESS: Shape: (2, 6, 6), Units: °
+2025-06-15 14:54:02,838 - INFO - Append meteorological data - SUCCESS: Variables appended: ['Temperature', 'Humidity', 'Pressure', 'WindSpeed', 'WindDirection']
+2025-06-15 14:54:02,838 - DEBUG - close - STARTED: File: D:/test/hdf5_test_1.h5
+2025-06-15 14:54:02,838 - INFO - close - SUCCESS
+2025-06-15 14:54:02,838 - DEBUG - Open HDF5 file - STARTED: File: D://test//hdf5_test.h5
+2025-06-15 14:54:02,838 - INFO - Open HDF5 file (Attempt 1/5) - RETRY: File not found: D://test//hdf5_test.h5 | Exception: FileNotFoundError([Errno 2] Unable to synchronously open file (unable to open file: name = 'D://test//hdf5_test.h5', errno = 2, error message = 'No such file or directory', flags = 0, o_flags = 0))
+2025-06-15 14:54:03,844 - DEBUG - Open HDF5 file - STARTED: File: D://test//hdf5_test.h5
+2025-06-15 14:54:03,844 - INFO - Open HDF5 file (Attempt 2/5) - RETRY: File not found: D://test//hdf5_test.h5 | Exception: FileNotFoundError([Errno 2] Unable to synchronously open file (unable to open file: name = 'D://test//hdf5_test.h5', errno = 2, error message = 'No such file or directory', flags = 0, o_flags = 0))
+2025-06-15 14:54:04,846 - DEBUG - Open HDF5 file - STARTED: File: D://test//hdf5_test.h5
+2025-06-15 14:54:04,846 - INFO - Open HDF5 file (Attempt 3/5) - RETRY: File not found: D://test//hdf5_test.h5 | Exception: FileNotFoundError([Errno 2] Unable to synchronously open file (unable to open file: name = 'D://test//hdf5_test.h5', errno = 2, error message = 'No such file or directory', flags = 0, o_flags = 0))
+2025-06-15 14:54:05,848 - DEBUG - Open HDF5 file - STARTED: File: D://test//hdf5_test.h5
+2025-06-15 14:54:05,848 - INFO - Open HDF5 file (Attempt 4/5) - RETRY: File not found: D://test//hdf5_test.h5 | Exception: FileNotFoundError([Errno 2] Unable to synchronously open file (unable to open file: name = 'D://test//hdf5_test.h5', errno = 2, error message = 'No such file or directory', flags = 0, o_flags = 0))
+2025-06-15 14:54:06,850 - DEBUG - Open HDF5 file - STARTED: File: D://test//hdf5_test.h5
+2025-06-15 14:54:06,850 - INFO - Open HDF5 file (Attempt 5/5) - RETRY: File not found: D://test//hdf5_test.h5 | Exception: FileNotFoundError([Errno 2] Unable to synchronously open file (unable to open file: name = 'D://test//hdf5_test.h5', errno = 2, error message = 'No such file or directory', flags = 0, o_flags = 0))
+2025-06-15 14:54:06,851 - ERROR - Open file - FAILED: Max retries exceeded after 5 attempts | Exception: FileNotFoundError([Errno 2] Unable to synchronously open file (unable to open file: name = 'D://test//hdf5_test.h5', errno = 2, error message = 'No such file or directory', flags = 0, o_flags = 0))
+2025-06-15 14:54:37,823 - DEBUG - Open HDF5 file - STARTED: File: D:/test/hdf5_test_1.h5
+2025-06-15 14:54:37,823 - INFO - Open HDF5 file - SUCCESS
+2025-06-15 14:54:37,828 - DEBUG - Append meteorological data - STARTED: File: D:/test/hdf5_test_1.h5, Dimensions: time=2,lat=6, lon=6 | Variables: ['Temperature', 'Humidity', 'Pressure', 'WindSpeed', 'WindDirection']
+2025-06-15 14:54:37,828 - INFO - Group access - SUCCESS: Accessed Observations group
+2025-06-15 14:54:37,828 - INFO - Append variable Temperature - SUCCESS: Shape: (2, 6, 6), Units: °C
+2025-06-15 14:54:37,830 - INFO - Append variable Humidity - SUCCESS: Shape: (2, 6, 6), Units: %
+2025-06-15 14:54:37,830 - INFO - Append variable Pressure - SUCCESS: Shape: (2, 6, 6), Units: hPa
+2025-06-15 14:54:37,832 - INFO - Append variable WindSpeed - SUCCESS: Shape: (2, 6, 6), Units: m/s
+2025-06-15 14:54:37,832 - INFO - Append variable WindDirection - SUCCESS: Shape: (2, 6, 6), Units: °
+2025-06-15 14:54:37,832 - INFO - Append meteorological data - SUCCESS: Variables appended: ['Temperature', 'Humidity', 'Pressure', 'WindSpeed', 'WindDirection']
+2025-06-15 14:54:37,832 - DEBUG - close - STARTED: File: D:/test/hdf5_test_1.h5
+2025-06-15 14:54:37,832 - INFO - close - SUCCESS
+2025-06-15 14:54:37,834 - DEBUG - Open HDF5 file - STARTED: File: D://test//hdf5_test_1.h5
+2025-06-15 14:54:37,834 - INFO - Open HDF5 file - SUCCESS
+2025-06-15 14:54:37,834 - DEBUG - Convert to DataFrame - STARTED: Include attributes: True
+2025-06-15 14:54:37,834 - DEBUG - Get dataset/Observations - STARTED: Group path: Observations
+2025-06-15 14:54:37,836 - INFO - Get dataset/Observations - SUCCESS: Type: Group
+2025-06-15 14:54:37,836 - ERROR - Convert to DataFrame - FAILED: "Unable to synchronously open object (object 'Coordinates' doesn't exist)" | Exception: KeyError("Unable to synchronously open object (object 'Coordinates' doesn't exist)")
+2025-06-15 14:54:37,839 - DEBUG - close - STARTED: File: D://test//hdf5_test_1.h5
+2025-06-15 14:54:37,839 - INFO - close - SUCCESS
+2025-06-15 14:55:04,324 - DEBUG - Open HDF5 file - STARTED: File: D:/test/hdf5_test_2.h5
+2025-06-15 14:55:04,326 - INFO - Open HDF5 file - SUCCESS
+2025-06-15 14:55:04,326 - DEBUG - Append meteorological data - STARTED: File: D:/test/hdf5_test_2.h5, Dimensions: time=2,lat=6, lon=6 | Variables: ['Temperature', 'Humidity', 'Pressure', 'WindSpeed', 'WindDirection']
+2025-06-15 14:55:04,326 - INFO - Group access - SUCCESS: Accessed Observations group
+2025-06-15 14:55:04,328 - INFO - Append variable Temperature - SUCCESS: Shape: (2, 6, 6), Units: °C
+2025-06-15 14:55:04,328 - INFO - Append variable Humidity - SUCCESS: Shape: (2, 6, 6), Units: %
+2025-06-15 14:55:04,328 - INFO - Append variable Pressure - SUCCESS: Shape: (2, 6, 6), Units: hPa
+2025-06-15 14:55:04,330 - INFO - Append variable WindSpeed - SUCCESS: Shape: (2, 6, 6), Units: m/s
+2025-06-15 14:55:04,330 - INFO - Append variable WindDirection - SUCCESS: Shape: (2, 6, 6), Units: °
+2025-06-15 14:55:04,330 - INFO - Append meteorological data - SUCCESS: Variables appended: ['Temperature', 'Humidity', 'Pressure', 'WindSpeed', 'WindDirection']
+2025-06-15 14:55:04,330 - DEBUG - close - STARTED: File: D:/test/hdf5_test_2.h5
+2025-06-15 14:55:04,330 - INFO - close - SUCCESS
+2025-06-15 14:55:04,333 - DEBUG - Open HDF5 file - STARTED: File: D://test//hdf5_test_2.h5
+2025-06-15 14:55:04,333 - INFO - Open HDF5 file - SUCCESS
+2025-06-15 14:55:04,333 - DEBUG - Convert to DataFrame - STARTED: Include attributes: True
+2025-06-15 14:55:04,333 - DEBUG - Get dataset/Observations - STARTED: Group path: Observations
+2025-06-15 14:55:04,333 - INFO - Get dataset/Observations - SUCCESS: Type: Group
+2025-06-15 14:55:04,333 - ERROR - Convert to DataFrame - FAILED: "Unable to synchronously open object (object 'Coordinates' doesn't exist)" | Exception: KeyError("Unable to synchronously open object (object 'Coordinates' doesn't exist)")
+2025-06-15 14:55:04,333 - DEBUG - close - STARTED: File: D://test//hdf5_test_2.h5
+2025-06-15 14:55:04,333 - INFO - close - SUCCESS
+2025-06-15 14:55:31,367 - DEBUG - Open HDF5 file - STARTED: File: D://test//hdf5_test_2.h5
+2025-06-15 14:55:31,369 - INFO - Open HDF5 file - SUCCESS
+2025-06-15 14:55:31,369 - DEBUG - Append meteorological data - STARTED: File: D://test//hdf5_test_2.h5, Dimensions: time=2,lat=6, lon=6 | Variables: ['Temperature', 'Humidity', 'Pressure', 'WindSpeed', 'WindDirection']
+2025-06-15 14:55:31,369 - INFO - Group access - SUCCESS: Accessed Observations group
+2025-06-15 14:55:31,369 - INFO - Append variable Temperature - SUCCESS: Shape: (2, 6, 6), Units: °C
+2025-06-15 14:55:31,369 - INFO - Append variable Humidity - SUCCESS: Shape: (2, 6, 6), Units: %
+2025-06-15 14:55:31,369 - INFO - Append variable Pressure - SUCCESS: Shape: (2, 6, 6), Units: hPa
+2025-06-15 14:55:31,376 - INFO - Append variable WindSpeed - SUCCESS: Shape: (2, 6, 6), Units: m/s
+2025-06-15 14:55:31,376 - INFO - Append variable WindDirection - SUCCESS: Shape: (2, 6, 6), Units: °
+2025-06-15 14:55:31,376 - INFO - Append meteorological data - SUCCESS: Variables appended: ['Temperature', 'Humidity', 'Pressure', 'WindSpeed', 'WindDirection']
+2025-06-15 14:55:31,376 - DEBUG - close - STARTED: File: D://test//hdf5_test_2.h5
+2025-06-15 14:55:31,376 - INFO - close - SUCCESS
+2025-06-15 14:55:31,378 - DEBUG - Open HDF5 file - STARTED: File: D://test//hdf5_test_2.h5
+2025-06-15 14:55:31,378 - INFO - Open HDF5 file - SUCCESS
+2025-06-15 14:55:31,378 - DEBUG - Convert to DataFrame - STARTED: Include attributes: True
+2025-06-15 14:55:31,378 - DEBUG - Get dataset/Observations - STARTED: Group path: Observations
+2025-06-15 14:55:31,378 - INFO - Get dataset/Observations - SUCCESS: Type: Group
+2025-06-15 14:55:31,380 - ERROR - Convert to DataFrame - FAILED: "Unable to synchronously open object (object 'Coordinates' doesn't exist)" | Exception: KeyError("Unable to synchronously open object (object 'Coordinates' doesn't exist)")
+2025-06-15 14:55:31,380 - DEBUG - close - STARTED: File: D://test//hdf5_test_2.h5
+2025-06-15 14:55:31,380 - INFO - close - SUCCESS
+2025-06-15 15:14:00,497 - DEBUG - Open HDF5 file - STARTED: File: D://test//hdf5_test_2.h5
+2025-06-15 15:14:00,513 - INFO - Open HDF5 file - SUCCESS
+2025-06-15 15:14:00,513 - DEBUG - Append meteorological data - STARTED: File: D://test//hdf5_test_2.h5, Dimensions: time=2,lat=6, lon=6 | Variables: ['Temperature', 'Humidity', 'Pressure', 'WindSpeed', 'WindDirection']
+2025-06-15 15:14:00,513 - INFO - Group access - SUCCESS: Accessed Observations group
+2025-06-15 15:14:00,528 - INFO - Append variable Temperature - SUCCESS: Shape: (2, 6, 6), Units: °C
+2025-06-15 15:14:00,528 - INFO - Append variable Humidity - SUCCESS: Shape: (2, 6, 6), Units: %
+2025-06-15 15:14:00,539 - INFO - Append variable Pressure - SUCCESS: Shape: (2, 6, 6), Units: hPa
+2025-06-15 15:14:00,539 - INFO - Append variable WindSpeed - SUCCESS: Shape: (2, 6, 6), Units: m/s
+2025-06-15 15:14:00,539 - INFO - Append variable WindDirection - SUCCESS: Shape: (2, 6, 6), Units: °
+2025-06-15 15:14:00,539 - INFO - Append meteorological data - SUCCESS: Variables appended: ['Temperature', 'Humidity', 'Pressure', 'WindSpeed', 'WindDirection']
+2025-06-15 15:14:00,539 - DEBUG - close - STARTED: File: D://test//hdf5_test_2.h5
+2025-06-15 15:14:00,539 - INFO - close - SUCCESS
+2025-06-15 15:14:00,539 - DEBUG - Open HDF5 file - STARTED: File: D://test//hdf5_test_2.h5
+2025-06-15 15:14:00,544 - INFO - Open HDF5 file - SUCCESS
+2025-06-15 15:14:00,544 - DEBUG - Convert to DataFrame - STARTED: Include attributes: True
+2025-06-15 15:14:00,544 - DEBUG - Get dataset/Observations - STARTED: Group path: Observations
+2025-06-15 15:14:00,544 - INFO - Get dataset/Observations - SUCCESS: Type: Group
+2025-06-15 15:14:00,544 - ERROR - Convert to DataFrame - FAILED: "Unable to synchronously open object (object 'Coordinates' doesn't exist)" | Exception: KeyError("Unable to synchronously open object (object 'Coordinates' doesn't exist)")
+2025-06-15 15:14:00,544 - DEBUG - close - STARTED: File: D://test//hdf5_test_2.h5
+2025-06-15 15:14:00,544 - INFO - close - SUCCESS
+2025-06-15 15:28:25,109 - DEBUG - Open HDF5 file - STARTED: File: D://test//hdf5_test_2.h5
+2025-06-15 15:28:25,109 - INFO - Open HDF5 file - SUCCESS
+2025-06-15 15:28:25,109 - DEBUG - Append meteorological data - STARTED: File: D://test//hdf5_test_2.h5, Dimensions: time=2,lat=6, lon=6 | Variables: ['Temperature', 'Humidity', 'Pressure', 'WindSpeed', 'WindDirection']
+2025-06-15 15:28:25,109 - ERROR - Append meteorological data - FAILED: File must be opened in 'a' mode for appending
+2025-06-15 15:28:25,109 - DEBUG - close - STARTED: File: D://test//hdf5_test_2.h5
+2025-06-15 15:28:25,109 - INFO - close - SUCCESS
+2025-06-15 15:28:39,843 - DEBUG - Open HDF5 file - STARTED: File: D://test//hdf5_test_2.h5
+2025-06-15 15:28:39,843 - INFO - Open HDF5 file - SUCCESS
+2025-06-15 15:28:39,845 - DEBUG - Write meteorological data - STARTED: File: D://test//hdf5_test_2.h5, Dimensions: time=2,lat=6, lon=6 | Variables: ['Temperature', 'Humidity', 'Pressure', 'WindSpeed', 'WindDirection']
+2025-06-15 15:28:39,845 - INFO - Time values generation - NOTE: Auto-generated time values (0 to 1)
+2025-06-15 15:28:39,845 - INFO - Coordinate generation - SUCCESS: Generated 6x6 grid
+2025-06-15 15:28:39,845 - INFO - Global attributes - NOTE
+2025-06-15 15:28:39,846 - INFO - Group structure - NOTE: Created Observations/Coordinates groups
+2025-06-15 15:28:39,846 - INFO - Write variable Temperature - SUCCESS: Shape: (2, 6, 6), Units: °C
+2025-06-15 15:28:39,846 - INFO - Write variable Humidity - SUCCESS: Shape: (2, 6, 6), Units: %
+2025-06-15 15:28:39,846 - INFO - Write variable Pressure - SUCCESS: Shape: (2, 6, 6), Units: hPa
+2025-06-15 15:28:39,846 - INFO - Write variable WindSpeed - SUCCESS: Shape: (2, 6, 6), Units: m/s
+2025-06-15 15:28:39,846 - INFO - Write variable WindDirection - SUCCESS: Shape: (2, 6, 6), Units: °
+2025-06-15 15:28:39,846 - INFO - Write meteorological data - SUCCESS: Variables written: ['Temperature', 'Humidity', 'Pressure', 'WindSpeed', 'WindDirection']
+2025-06-15 15:28:39,846 - DEBUG - close - STARTED: File: D://test//hdf5_test_2.h5
+2025-06-15 15:28:39,846 - INFO - close - SUCCESS
+2025-06-15 15:28:39,846 - DEBUG - Open HDF5 file - STARTED: File: D://test//hdf5_test_2.h5
+2025-06-15 15:28:39,846 - INFO - Open HDF5 file - SUCCESS
+2025-06-15 15:28:39,846 - DEBUG - Convert to DataFrame - STARTED: Include attributes: True
+2025-06-15 15:28:39,846 - DEBUG - Get dataset/Observations - STARTED: Group path: Observations
+2025-06-15 15:28:39,846 - INFO - Get dataset/Observations - SUCCESS: Type: Group
+2025-06-15 15:28:39,862 - INFO - Processing variable Humidity - SUCCESS
+2025-06-15 15:28:39,862 - INFO - Processing variable Pressure - SUCCESS
+2025-06-15 15:28:39,862 - INFO - Processing variable Temperature - SUCCESS
+2025-06-15 15:28:39,862 - INFO - Processing variable WindDirection - SUCCESS
+2025-06-15 15:28:39,862 - INFO - Processing variable WindSpeed - SUCCESS
+2025-06-15 15:28:39,875 - INFO - Convert to DataFrame - SUCCESS: Converted 5 variables to DataFrame
+2025-06-15 15:28:39,875 - DEBUG - Convert selected variables to DataFrame: ['Temperature', 'Humidity'] - STARTED: Include attributes: False
+2025-06-15 15:28:39,875 - DEBUG - Get dataset/Observations - STARTED: Group path: Observations
+2025-06-15 15:28:39,875 - INFO - Get dataset/Observations - SUCCESS: Type: Group
+2025-06-15 15:28:39,875 - ERROR - Convert selected variables to DataFrame: ['Temperature', 'Humidity'] - FAILED: Variables not found: <generator object DataTransformer.selected_to_dataframe.<locals>.<genexpr> at 0x0000020E073E5E50>
+2025-06-15 15:28:39,878 - DEBUG - close - STARTED: File: D://test//hdf5_test_2.h5
+2025-06-15 15:28:39,878 - INFO - close - SUCCESS
+2025-06-15 15:32:37,125 - DEBUG - Open HDF5 file - STARTED: File: D://test//hdf5_test_2.h5
+2025-06-15 15:32:37,125 - INFO - Open HDF5 file - SUCCESS
+2025-06-15 15:32:37,141 - DEBUG - Write meteorological data - STARTED: File: D://test//hdf5_test_2.h5, Dimensions: time=2,lat=6, lon=6 | Variables: ['Temperature', 'Humidity', 'Pressure', 'WindSpeed', 'WindDirection']
+2025-06-15 15:32:37,141 - INFO - Time values generation - NOTE: Auto-generated time values (0 to 1)
+2025-06-15 15:32:37,141 - INFO - Coordinate generation - SUCCESS: Generated 6x6 grid
+2025-06-15 15:32:37,141 - INFO - Global attributes - NOTE
+2025-06-15 15:32:37,141 - INFO - Group structure - NOTE: Created Observations/Coordinates groups
+2025-06-15 15:32:37,141 - INFO - Write variable Temperature - SUCCESS: Shape: (2, 6, 6), Units: °C
+2025-06-15 15:32:37,141 - INFO - Write variable Humidity - SUCCESS: Shape: (2, 6, 6), Units: %
+2025-06-15 15:32:37,141 - INFO - Write variable Pressure - SUCCESS: Shape: (2, 6, 6), Units: hPa
+2025-06-15 15:32:37,141 - INFO - Write variable WindSpeed - SUCCESS: Shape: (2, 6, 6), Units: m/s
+2025-06-15 15:32:37,141 - INFO - Write variable WindDirection - SUCCESS: Shape: (2, 6, 6), Units: °
+2025-06-15 15:32:37,141 - INFO - Write meteorological data - SUCCESS: Variables written: ['Temperature', 'Humidity', 'Pressure', 'WindSpeed', 'WindDirection']
+2025-06-15 15:32:37,141 - DEBUG - close - STARTED: File: D://test//hdf5_test_2.h5
+2025-06-15 15:32:37,141 - INFO - close - SUCCESS
+2025-06-15 15:32:37,141 - DEBUG - Open HDF5 file - STARTED: File: D://test//hdf5_test_2.h5
+2025-06-15 15:32:37,141 - INFO - Open HDF5 file - SUCCESS
+2025-06-15 15:32:37,141 - DEBUG - Convert to DataFrame - STARTED: Include attributes: True
+2025-06-15 15:32:37,141 - DEBUG - Get dataset/Observations - STARTED: Group path: Observations
+2025-06-15 15:32:37,141 - INFO - Get dataset/Observations - SUCCESS: Type: Group
+2025-06-15 15:32:37,141 - INFO - Processing variable Humidity - SUCCESS
+2025-06-15 15:32:37,141 - INFO - Processing variable Pressure - SUCCESS
+2025-06-15 15:32:37,141 - INFO - Processing variable Temperature - SUCCESS
+2025-06-15 15:32:37,141 - INFO - Processing variable WindDirection - SUCCESS
+2025-06-15 15:32:37,141 - INFO - Processing variable WindSpeed - SUCCESS
+2025-06-15 15:32:37,141 - INFO - Convert to DataFrame - SUCCESS: Converted 5 variables to DataFrame
+2025-06-15 15:32:37,141 - DEBUG - Convert selected variables to DataFrame: ['Temperature', 'Humidity'] - STARTED: Include attributes: False
+2025-06-15 15:32:37,141 - DEBUG - Get dataset/Observations - STARTED: Group path: Observations
+2025-06-15 15:32:37,141 - INFO - Get dataset/Observations - SUCCESS: Type: Group
+2025-06-15 15:32:37,157 - DEBUG - Processing variable Temperature - STARTED
+2025-06-15 15:32:37,157 - INFO - Processing variable Temperature - SUCCESS
+2025-06-15 15:32:37,157 - DEBUG - Processing variable Humidity - STARTED
+2025-06-15 15:32:37,157 - INFO - Processing variable Humidity - SUCCESS
+2025-06-15 15:32:37,157 - INFO - Convert selected variables to DataFrame: ['Temperature', 'Humidity'] - SUCCESS: Converted 2 variables to DataFrame
+2025-06-15 15:32:37,157 - DEBUG - Convert variable Temperature to Series - STARTED: var: Temperature
+2025-06-15 15:32:37,157 - DEBUG - Get dataset/Observations - STARTED: Group path: Observations
+2025-06-15 15:32:37,157 - INFO - Get dataset/Observations - SUCCESS: Type: Group
+2025-06-15 15:32:37,157 - INFO - Convert variable Temperature to Series - SUCCESS
+2025-06-15 15:32:37,157 - DEBUG - close - STARTED: File: D://test//hdf5_test_2.h5
+2025-06-15 15:32:37,157 - INFO - close - SUCCESS
+2025-06-15 15:32:37,157 - DEBUG - Open HDF5 file - STARTED: File: D://test//hdf5_test_2.h5
+2025-06-15 15:32:37,157 - INFO - Open HDF5 file - SUCCESS
+2025-06-15 15:32:37,157 - DEBUG - Temperature cleaning - STARTED: Variable: Temperature, Thresholds: [-20, 40], Fill: linear
+2025-06-15 15:32:37,157 - DEBUG - Get variable data: Temperature - STARTED: File: D://test//hdf5_test_2.h5
+2025-06-15 15:32:37,157 - DEBUG - Get dataset/Observations/Temperature - STARTED: Group path: Observations/Temperature
+2025-06-15 15:32:37,157 - INFO - Get dataset/Observations/Temperature - SUCCESS: Type: Dataset, shape: (2, 6, 6)
+2025-06-15 15:32:37,157 - INFO - Get variable data: Temperature - SUCCESS
+2025-06-15 15:32:37,157 - ERROR - Temperature cleaning - FAILED: 'DataTransformer' object has no attribute 'to_series'
+2025-06-15 15:32:37,157 - DEBUG - close - STARTED: File: D://test//hdf5_test_2.h5
+2025-06-15 15:32:37,157 - INFO - close - SUCCESS
+2025-06-15 15:33:46,008 - DEBUG - Open HDF5 file - STARTED: File: D://test//hdf5_test_2.h5
+2025-06-15 15:33:46,008 - INFO - Open HDF5 file - SUCCESS
+2025-06-15 15:33:46,008 - DEBUG - Write meteorological data - STARTED: File: D://test//hdf5_test_2.h5, Dimensions: time=2,lat=6, lon=6 | Variables: ['Temperature', 'Humidity', 'Pressure', 'WindSpeed', 'WindDirection']
+2025-06-15 15:33:46,008 - INFO - Time values generation - NOTE: Auto-generated time values (0 to 1)
+2025-06-15 15:33:46,008 - INFO - Coordinate generation - SUCCESS: Generated 6x6 grid
+2025-06-15 15:33:46,008 - INFO - Global attributes - NOTE
+2025-06-15 15:33:46,024 - INFO - Group structure - NOTE: Created Observations/Coordinates groups
+2025-06-15 15:33:46,024 - INFO - Write variable Temperature - SUCCESS: Shape: (2, 6, 6), Units: °C
+2025-06-15 15:33:46,024 - INFO - Write variable Humidity - SUCCESS: Shape: (2, 6, 6), Units: %
+2025-06-15 15:33:46,024 - INFO - Write variable Pressure - SUCCESS: Shape: (2, 6, 6), Units: hPa
+2025-06-15 15:33:46,024 - INFO - Write variable WindSpeed - SUCCESS: Shape: (2, 6, 6), Units: m/s
+2025-06-15 15:33:46,024 - INFO - Write variable WindDirection - SUCCESS: Shape: (2, 6, 6), Units: °
+2025-06-15 15:33:46,024 - INFO - Write meteorological data - SUCCESS: Variables written: ['Temperature', 'Humidity', 'Pressure', 'WindSpeed', 'WindDirection']
+2025-06-15 15:33:46,024 - DEBUG - close - STARTED: File: D://test//hdf5_test_2.h5
+2025-06-15 15:33:46,024 - INFO - close - SUCCESS
+2025-06-15 15:33:46,024 - DEBUG - Open HDF5 file - STARTED: File: D://test//hdf5_test_2.h5
+2025-06-15 15:33:46,024 - INFO - Open HDF5 file - SUCCESS
+2025-06-15 15:33:46,024 - DEBUG - Convert to DataFrame - STARTED: Include attributes: True
+2025-06-15 15:33:46,024 - DEBUG - Get dataset/Observations - STARTED: Group path: Observations
+2025-06-15 15:33:46,024 - INFO - Get dataset/Observations - SUCCESS: Type: Group
+2025-06-15 15:33:46,024 - INFO - Processing variable Humidity - SUCCESS
+2025-06-15 15:33:46,024 - INFO - Processing variable Pressure - SUCCESS
+2025-06-15 15:33:46,024 - INFO - Processing variable Temperature - SUCCESS
+2025-06-15 15:33:46,024 - INFO - Processing variable WindDirection - SUCCESS
+2025-06-15 15:33:46,024 - INFO - Processing variable WindSpeed - SUCCESS
+2025-06-15 15:33:46,024 - INFO - Convert to DataFrame - SUCCESS: Converted 5 variables to DataFrame
+2025-06-15 15:33:46,024 - DEBUG - Convert selected variables to DataFrame: ['Temperature', 'Humidity'] - STARTED: Include attributes: False
+2025-06-15 15:33:46,024 - DEBUG - Get dataset/Observations - STARTED: Group path: Observations
+2025-06-15 15:33:46,024 - INFO - Get dataset/Observations - SUCCESS: Type: Group
+2025-06-15 15:33:46,040 - DEBUG - Processing variable Temperature - STARTED
+2025-06-15 15:33:46,040 - INFO - Processing variable Temperature - SUCCESS
+2025-06-15 15:33:46,040 - DEBUG - Processing variable Humidity - STARTED
+2025-06-15 15:33:46,040 - INFO - Processing variable Humidity - SUCCESS
+2025-06-15 15:33:46,040 - INFO - Convert selected variables to DataFrame: ['Temperature', 'Humidity'] - SUCCESS: Converted 2 variables to DataFrame
+2025-06-15 15:33:46,040 - DEBUG - Convert variable Temperature to Series - STARTED: var: Temperature
+2025-06-15 15:33:46,040 - DEBUG - Get dataset/Observations - STARTED: Group path: Observations
+2025-06-15 15:33:46,040 - INFO - Get dataset/Observations - SUCCESS: Type: Group
+2025-06-15 15:33:46,040 - INFO - Convert variable Temperature to Series - SUCCESS
+2025-06-15 15:33:46,040 - DEBUG - close - STARTED: File: D://test//hdf5_test_2.h5
+2025-06-15 15:33:46,040 - INFO - close - SUCCESS
+2025-06-15 15:33:46,040 - DEBUG - Open HDF5 file - STARTED: File: D://test//hdf5_test_2.h5
+2025-06-15 15:33:46,040 - INFO - Open HDF5 file - SUCCESS
+2025-06-15 15:33:46,040 - DEBUG - Temperature cleaning - STARTED: Variable: Temperature, Thresholds: [-20, 40], Fill: linear
+2025-06-15 15:33:46,040 - DEBUG - Get variable data: Temperature - STARTED: File: D://test//hdf5_test_2.h5
+2025-06-15 15:33:46,040 - DEBUG - Get dataset/Observations/Temperature - STARTED: Group path: Observations/Temperature
+2025-06-15 15:33:46,040 - INFO - Get dataset/Observations/Temperature - SUCCESS: Type: Dataset, shape: (2, 6, 6)
+2025-06-15 15:33:46,040 - INFO - Get variable data: Temperature - SUCCESS
+2025-06-15 15:33:46,040 - ERROR - Temperature cleaning - FAILED: DataTransformer.variable_to_series() takes 2 positional arguments but 3 were given
+2025-06-15 15:33:46,040 - DEBUG - close - STARTED: File: D://test//hdf5_test_2.h5
+2025-06-15 15:33:46,040 - INFO - close - SUCCESS
+2025-06-15 15:35:27,066 - DEBUG - Open HDF5 file - STARTED: File: D://test//hdf5_test_2.h5
+2025-06-15 15:35:27,066 - INFO - Open HDF5 file - SUCCESS
+2025-06-15 15:35:27,066 - DEBUG - Write meteorological data - STARTED: File: D://test//hdf5_test_2.h5, Dimensions: time=2,lat=6, lon=6 | Variables: ['Temperature', 'Humidity', 'Pressure', 'WindSpeed', 'WindDirection']
+2025-06-15 15:35:27,066 - INFO - Time values generation - NOTE: Auto-generated time values (0 to 1)
+2025-06-15 15:35:27,066 - INFO - Coordinate generation - SUCCESS: Generated 6x6 grid
+2025-06-15 15:35:27,078 - INFO - Global attributes - NOTE
+2025-06-15 15:35:27,078 - INFO - Group structure - NOTE: Created Observations/Coordinates groups
+2025-06-15 15:35:27,078 - INFO - Write variable Temperature - SUCCESS: Shape: (2, 6, 6), Units: °C
+2025-06-15 15:35:27,078 - INFO - Write variable Humidity - SUCCESS: Shape: (2, 6, 6), Units: %
+2025-06-15 15:35:27,078 - INFO - Write variable Pressure - SUCCESS: Shape: (2, 6, 6), Units: hPa
+2025-06-15 15:35:27,078 - INFO - Write variable WindSpeed - SUCCESS: Shape: (2, 6, 6), Units: m/s
+2025-06-15 15:35:27,078 - INFO - Write variable WindDirection - SUCCESS: Shape: (2, 6, 6), Units: °
+2025-06-15 15:35:27,078 - INFO - Write meteorological data - SUCCESS: Variables written: ['Temperature', 'Humidity', 'Pressure', 'WindSpeed', 'WindDirection']
+2025-06-15 15:35:27,078 - DEBUG - close - STARTED: File: D://test//hdf5_test_2.h5
+2025-06-15 15:35:27,078 - INFO - close - SUCCESS
+2025-06-15 15:35:27,078 - DEBUG - Open HDF5 file - STARTED: File: D://test//hdf5_test_2.h5
+2025-06-15 15:35:27,078 - INFO - Open HDF5 file - SUCCESS
+2025-06-15 15:35:27,078 - DEBUG - Convert to DataFrame - STARTED: Include attributes: True
+2025-06-15 15:35:27,078 - DEBUG - Get dataset/Observations - STARTED: Group path: Observations
+2025-06-15 15:35:27,078 - INFO - Get dataset/Observations - SUCCESS: Type: Group
+2025-06-15 15:35:27,078 - INFO - Processing variable Humidity - SUCCESS
+2025-06-15 15:35:27,078 - INFO - Processing variable Pressure - SUCCESS
+2025-06-15 15:35:27,078 - INFO - Processing variable Temperature - SUCCESS
+2025-06-15 15:35:27,078 - INFO - Processing variable WindDirection - SUCCESS
+2025-06-15 15:35:27,078 - INFO - Processing variable WindSpeed - SUCCESS
+2025-06-15 15:35:27,078 - INFO - Convert to DataFrame - SUCCESS: Converted 5 variables to DataFrame
+2025-06-15 15:35:27,078 - DEBUG - Convert selected variables to DataFrame: ['Temperature', 'Humidity'] - STARTED: Include attributes: False
+2025-06-15 15:35:27,094 - DEBUG - Get dataset/Observations - STARTED: Group path: Observations
+2025-06-15 15:35:27,094 - INFO - Get dataset/Observations - SUCCESS: Type: Group
+2025-06-15 15:35:27,094 - DEBUG - Processing variable Temperature - STARTED
+2025-06-15 15:35:27,094 - INFO - Processing variable Temperature - SUCCESS
+2025-06-15 15:35:27,094 - DEBUG - Processing variable Humidity - STARTED
+2025-06-15 15:35:27,094 - INFO - Processing variable Humidity - SUCCESS
+2025-06-15 15:35:27,094 - INFO - Convert selected variables to DataFrame: ['Temperature', 'Humidity'] - SUCCESS: Converted 2 variables to DataFrame
+2025-06-15 15:35:27,094 - DEBUG - Convert variable Temperature to Series - STARTED: var: Temperature
+2025-06-15 15:35:27,094 - DEBUG - Get dataset/Observations - STARTED: Group path: Observations
+2025-06-15 15:35:27,094 - INFO - Get dataset/Observations - SUCCESS: Type: Group
+2025-06-15 15:35:27,094 - INFO - Convert variable Temperature to Series - SUCCESS
+2025-06-15 15:35:27,094 - DEBUG - close - STARTED: File: D://test//hdf5_test_2.h5
+2025-06-15 15:35:27,094 - INFO - close - SUCCESS
+2025-06-15 15:35:27,094 - DEBUG - Open HDF5 file - STARTED: File: D://test//hdf5_test_2.h5
+2025-06-15 15:35:27,094 - INFO - Open HDF5 file - SUCCESS
+2025-06-15 15:35:27,094 - DEBUG - Temperature cleaning - STARTED: Variable: Temperature, Thresholds: [-20, 40], Fill: linear
+2025-06-15 15:35:27,094 - DEBUG - Convert variable Temperature to Series - STARTED: var: Temperature
+2025-06-15 15:35:27,094 - DEBUG - Get dataset/Observations - STARTED: Group path: Observations
+2025-06-15 15:35:27,094 - INFO - Get dataset/Observations - SUCCESS: Type: Group
+2025-06-15 15:35:27,094 - INFO - Convert variable Temperature to Series - SUCCESS
+2025-06-15 15:35:27,110 - INFO - Temperature cleaning - SUCCESS: No invalid values found
+2025-06-15 15:35:27,110 - DEBUG - Wind_Speed cleaning - STARTED: Variable: WindSpeed, Thresholds: [0, 10], Fill: linear
+2025-06-15 15:35:27,110 - DEBUG - Convert variable WindSpeed to Series - STARTED: var: WindSpeed
+2025-06-15 15:35:27,110 - DEBUG - Get dataset/Observations - STARTED: Group path: Observations
+2025-06-15 15:35:27,110 - INFO - Get dataset/Observations - SUCCESS: Type: Group
+2025-06-15 15:35:27,110 - INFO - Convert variable WindSpeed to Series - SUCCESS
+2025-06-15 15:35:27,110 - INFO - Wind_Speed cleaning - SUCCESS: No invalid values found
+2025-06-15 15:35:27,110 - DEBUG - close - STARTED: File: D://test//hdf5_test_2.h5
+2025-06-15 15:35:27,110 - INFO - close - SUCCESS
+2025-06-15 15:35:27,110 - DEBUG - Open HDF5 file - STARTED: File: D://test//hdf5_test_2.h5
+2025-06-15 15:35:27,110 - INFO - Open HDF5 file - SUCCESS
+2025-06-15 15:35:27,110 - DEBUG - Get variable slice: Temperature - STARTED: Slices - time: slice(0, 1, None), lat: slice(0, 3, None), lon: slice(0, 3, None)
+2025-06-15 15:35:27,110 - DEBUG - Get dataset/Observations/Temperature - STARTED: Group path: Observations/Temperature
+2025-06-15 15:35:27,110 - INFO - Get dataset/Observations/Temperature - SUCCESS: Type: Dataset, shape: (2, 6, 6)
+2025-06-15 15:35:27,110 - DEBUG - Get dataset/Observations/Coordinates - STARTED: Group path: Observations/Coordinates
+2025-06-15 15:35:27,110 - INFO - Get dataset/Observations/Coordinates - SUCCESS: Type: Group
+2025-06-15 15:35:27,110 - INFO - Get variable slice: Temperature - SUCCESS: Result shape: (9, 1)
+2025-06-15 15:35:27,125 - DEBUG - Get mean: Temperature - STARTED: Slices - time: None, lat: None, lon: None
+2025-06-15 15:35:27,125 - DEBUG - Get variable slice: Temperature - STARTED: Slices - time: None, lat: None, lon: None
+2025-06-15 15:35:27,125 - DEBUG - Get dataset/Observations/Temperature - STARTED: Group path: Observations/Temperature
+2025-06-15 15:35:27,125 - INFO - Get dataset/Observations/Temperature - SUCCESS: Type: Dataset, shape: (2, 6, 6)
+2025-06-15 15:35:27,125 - DEBUG - Get dataset/Observations/Coordinates - STARTED: Group path: Observations/Coordinates
+2025-06-15 15:35:27,125 - INFO - Get dataset/Observations/Coordinates - SUCCESS: Type: Group
+2025-06-15 15:35:27,125 - INFO - Get variable slice: Temperature - SUCCESS: Result shape: (72, 1)
+2025-06-15 15:35:27,125 - INFO - Get mean: Temperature - SUCCESS: mean value: 10.6175
+2025-06-15 15:35:27,125 - DEBUG - Get maximum: Temperature - STARTED: Slices - time: None, lat: None, lon: None
+2025-06-15 15:35:27,125 - DEBUG - Get variable slice: Temperature - STARTED: Slices - time: None, lat: None, lon: None
+2025-06-15 15:35:27,125 - DEBUG - Get dataset/Observations/Temperature - STARTED: Group path: Observations/Temperature
+2025-06-15 15:35:27,125 - INFO - Get dataset/Observations/Temperature - SUCCESS: Type: Dataset, shape: (2, 6, 6)
+2025-06-15 15:35:27,141 - DEBUG - Get dataset/Observations/Coordinates - STARTED: Group path: Observations/Coordinates
+2025-06-15 15:35:27,141 - INFO - Get dataset/Observations/Coordinates - SUCCESS: Type: Group
+2025-06-15 15:35:27,141 - INFO - Get variable slice: Temperature - SUCCESS: Result shape: (72, 1)
+2025-06-15 15:35:27,141 - INFO - Get maximum: Temperature - SUCCESS: maximum value: 39.3011
+2025-06-15 15:35:27,141 - DEBUG - Calculate pearson temporal correlation between Temperature and Humidity - STARTED
+2025-06-15 15:35:27,141 - DEBUG - Get variable slice: Temperature - STARTED: Slices - time: None, lat: None, lon: None
+2025-06-15 15:35:27,141 - DEBUG - Get dataset/Observations/Temperature - STARTED: Group path: Observations/Temperature
+2025-06-15 15:35:27,141 - INFO - Get dataset/Observations/Temperature - SUCCESS: Type: Dataset, shape: (2, 6, 6)
+2025-06-15 15:35:27,141 - DEBUG - Get dataset/Observations/Coordinates - STARTED: Group path: Observations/Coordinates
+2025-06-15 15:35:27,141 - INFO - Get dataset/Observations/Coordinates - SUCCESS: Type: Group
+2025-06-15 15:35:27,141 - INFO - Get variable slice: Temperature - SUCCESS: Result shape: (72, 1)
+2025-06-15 15:35:27,141 - DEBUG - Get variable slice: Humidity - STARTED: Slices - time: None, lat: None, lon: None
+2025-06-15 15:35:27,141 - DEBUG - Get dataset/Observations/Humidity - STARTED: Group path: Observations/Humidity
+2025-06-15 15:35:27,141 - INFO - Get dataset/Observations/Humidity - SUCCESS: Type: Dataset, shape: (2, 6, 6)
+2025-06-15 15:35:27,141 - DEBUG - Get dataset/Observations/Coordinates - STARTED: Group path: Observations/Coordinates
+2025-06-15 15:35:27,141 - INFO - Get dataset/Observations/Coordinates - SUCCESS: Type: Group
+2025-06-15 15:35:27,141 - INFO - Get variable slice: Humidity - SUCCESS: Result shape: (72, 1)
+2025-06-15 15:35:27,141 - INFO - Calculate pearson temporal correlation between Temperature and Humidity - SUCCESS: Correlation: 0.093
+2025-06-15 15:35:27,141 - DEBUG - close - STARTED: File: D://test//hdf5_test_2.h5
+2025-06-15 15:35:27,141 - INFO - close - SUCCESS
+2025-06-15 15:35:27,141 - DEBUG - Open HDF5 file - STARTED: File: D://test//hdf5_test_2.h5
+2025-06-15 15:35:27,141 - INFO - Open HDF5 file - SUCCESS
+2025-06-15 15:35:27,141 - DEBUG - Resample Temperature by D - STARTED: Method: mean, lat: None, lon: None
+2025-06-15 15:35:27,141 - DEBUG - Get variable slice: Temperature - STARTED: Slices - time: None, lat: None, lon: None
+2025-06-15 15:35:27,141 - DEBUG - Get dataset/Observations/Temperature - STARTED: Group path: Observations/Temperature
+2025-06-15 15:35:27,141 - INFO - Get dataset/Observations/Temperature - SUCCESS: Type: Dataset, shape: (2, 6, 6)
+2025-06-15 15:35:27,141 - DEBUG - Get dataset/Observations/Coordinates - STARTED: Group path: Observations/Coordinates
+2025-06-15 15:35:27,141 - INFO - Get dataset/Observations/Coordinates - SUCCESS: Type: Group
+2025-06-15 15:35:27,157 - INFO - Get variable slice: Temperature - SUCCESS: Result shape: (72, 1)
+2025-06-15 15:35:27,221 - INFO - Resample Temperature by D - SUCCESS: Resampled shape: (1, 36)
+2025-06-15 15:35:27,255 - DEBUG - Resample multiple variables by D - STARTED: Variables: ['Temperature', 'Humidity'], Method: {'Temperature': 'mean', 'Humidity': 'max'}
+2025-06-15 15:35:27,257 - INFO - Processing Temperature - PROGRESS: Method: mean
+2025-06-15 15:35:27,257 - DEBUG - Resample Temperature by D - STARTED: Method: mean, lat: None, lon: None
+2025-06-15 15:35:27,257 - DEBUG - Get variable slice: Temperature - STARTED: Slices - time: None, lat: None, lon: None
+2025-06-15 15:35:27,257 - DEBUG - Get dataset/Observations/Temperature - STARTED: Group path: Observations/Temperature
+2025-06-15 15:35:27,257 - INFO - Get dataset/Observations/Temperature - SUCCESS: Type: Dataset, shape: (2, 6, 6)
+2025-06-15 15:35:27,257 - DEBUG - Get dataset/Observations/Coordinates - STARTED: Group path: Observations/Coordinates
+2025-06-15 15:35:27,257 - INFO - Get dataset/Observations/Coordinates - SUCCESS: Type: Group
+2025-06-15 15:35:27,259 - INFO - Get variable slice: Temperature - SUCCESS: Result shape: (72, 1)
+2025-06-15 15:35:27,298 - INFO - Resample Temperature by D - SUCCESS: Resampled shape: (1, 36)
+2025-06-15 15:35:27,298 - INFO - Processing Humidity - PROGRESS: Method: max
+2025-06-15 15:35:27,298 - DEBUG - Resample Humidity by D - STARTED: Method: max, lat: None, lon: None
+2025-06-15 15:35:27,298 - DEBUG - Get variable slice: Humidity - STARTED: Slices - time: None, lat: None, lon: None
+2025-06-15 15:35:27,298 - DEBUG - Get dataset/Observations/Humidity - STARTED: Group path: Observations/Humidity
+2025-06-15 15:35:27,298 - INFO - Get dataset/Observations/Humidity - SUCCESS: Type: Dataset, shape: (2, 6, 6)
+2025-06-15 15:35:27,298 - DEBUG - Get dataset/Observations/Coordinates - STARTED: Group path: Observations/Coordinates
+2025-06-15 15:35:27,298 - INFO - Get dataset/Observations/Coordinates - SUCCESS: Type: Group
+2025-06-15 15:35:27,300 - INFO - Get variable slice: Humidity - SUCCESS: Result shape: (72, 1)
+2025-06-15 15:35:27,341 - INFO - Resample Humidity by D - SUCCESS: Resampled shape: (1, 36)
+2025-06-15 15:35:27,341 - INFO - Resample multiple variables by D - SUCCESS: Completed 2 variables
+2025-06-15 15:35:27,341 - DEBUG - close - STARTED: File: D://test//hdf5_test_2.h5
+2025-06-15 15:35:27,341 - INFO - close - SUCCESS
+2025-06-15 15:35:27,341 - DEBUG - Open HDF5 file - STARTED: File: D://test//hdf5_test_2.h5
+2025-06-15 15:35:27,341 - INFO - Open HDF5 file - SUCCESS
+2025-06-15 15:35:27,341 - DEBUG - Load data for filtering (using DataAnalyzer) - STARTED
+2025-06-15 15:35:27,341 - DEBUG - Get multiple variables slices - STARTED: Variables: ['Temperature', 'Humidity'], Slices - time: None, lat: None, lon: None
+2025-06-15 15:35:27,341 - INFO - Processing variable: Temperature - PROGRESS: Progress: 1/2
+2025-06-15 15:35:27,341 - DEBUG - Get variable slice: Temperature - STARTED: Slices - time: None, lat: None, lon: None
+2025-06-15 15:35:27,341 - DEBUG - Get dataset/Observations/Temperature - STARTED: Group path: Observations/Temperature
+2025-06-15 15:35:27,341 - INFO - Get dataset/Observations/Temperature - SUCCESS: Type: Dataset, shape: (2, 6, 6)
+2025-06-15 15:35:27,341 - DEBUG - Get dataset/Observations/Coordinates - STARTED: Group path: Observations/Coordinates
+2025-06-15 15:35:27,341 - INFO - Get dataset/Observations/Coordinates - SUCCESS: Type: Group
+2025-06-15 15:35:27,341 - INFO - Get variable slice: Temperature - SUCCESS: Result shape: (72, 1)
+2025-06-15 15:35:27,341 - INFO - Processing variable: Humidity - PROGRESS: Progress: 2/2
+2025-06-15 15:35:27,341 - DEBUG - Get variable slice: Humidity - STARTED: Slices - time: None, lat: None, lon: None
+2025-06-15 15:35:27,341 - DEBUG - Get dataset/Observations/Humidity - STARTED: Group path: Observations/Humidity
+2025-06-15 15:35:27,341 - INFO - Get dataset/Observations/Humidity - SUCCESS: Type: Dataset, shape: (2, 6, 6)
+2025-06-15 15:35:27,341 - DEBUG - Get dataset/Observations/Coordinates - STARTED: Group path: Observations/Coordinates
+2025-06-15 15:35:27,341 - INFO - Get dataset/Observations/Coordinates - SUCCESS: Type: Group
+2025-06-15 15:35:27,341 - INFO - Get variable slice: Humidity - SUCCESS: Result shape: (72, 1)
+2025-06-15 15:35:27,355 - INFO - Get multiple variables slices - SUCCESS: Total shape: (72, 2), Variables: ['Temperature', 'Humidity']
+2025-06-15 15:35:27,355 - INFO - Load data for filtering (using DataAnalyzer) - SUCCESS: Loaded data shape: (72, 2)
+2025-06-15 15:35:27,355 - DEBUG - Filter data by condition > 30 - STARTED
+2025-06-15 15:35:27,355 - INFO - Filter data by condition > 30 - SUCCESS: Filtered records: 9
+2025-06-15 15:35:27,355 - DEBUG - Filter data by query: Temperature > 25 and Humidity > 70 - STARTED
+2025-06-15 15:35:27,355 - INFO - Filter data by query: Temperature > 25 and Humidity > 70 - SUCCESS: Filtered records: 3
+2025-06-15 15:35:27,362 - DEBUG - close - STARTED: File: D://test//hdf5_test_2.h5
+2025-06-15 15:35:27,362 - INFO - close - SUCCESS

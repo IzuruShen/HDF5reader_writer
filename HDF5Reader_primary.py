@@ -317,21 +317,16 @@ class HDF5reader_writer:
         if self.__dataset is None:
             raise RuntimeError("HDF5 file is not open. Use 'with' statement to open the file.")
             
-        # 生成时间数据
-        if time_points is not None:
-            if time_values is None:
-                time_values = np.arange(time_points)  # 默认生成0,1,2,...的时间序列
-            elif len(time_values) != time_points:
-                raise ValueError("time_values length must match time_points")
+        if len(time_values) != time_points:
+            raise ValueError("time_values length must match time_points")
                 
-        # 生成经纬度数据
-        if not (lat_points > 0 and lon_points > 0):
-            raise ValueError("lat_points and lon_points must be positive")
-        if not (isinstance(lat_points, int) and isinstance(lon_points, int)):
-            raise TypeError("lat_points and lon_points must be integers")
+        if not (lat_points > 0 and lon_points > 0 and time_points > 0):
+            raise ValueError("lat_points, lon_points and time_points must be positive")
+        if not (isinstance(lat_points, int) and isinstance(lon_points, int) and isinstance(time_points, int)):
+            raise TypeError("lat_points, lon_points and time_points must be integers")
         if lat_min >= lat_max or lon_min >= lon_max:
             raise ValueError("lat_min must be < lat_max and lon_min must be < lon_max")
-            
+        
         obs_group = self.__dataset.require_group('Observations')
         
         # 遍历 dic_data，写入所有变量

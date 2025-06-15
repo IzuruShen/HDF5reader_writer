@@ -272,14 +272,14 @@ class DataTransformer:
             coord_group = obs_group["Coordinates"]
             
             # 检查变量是否存在
-            missing_vars = (name for name in variable_names if name not in obs_group)
+            missing_vars = [name for name in variable_names if name not in obs_group]
             if missing_vars:
                 error_msg = f"Variables not found: {missing_vars}"
                 self._log_operation(
                     operation=operation, 
                     status="FAILED", 
                     message=error_msg
-                    )
+                )
                 raise KeyError(error_msg)
             
             lats = coord_group["Latitude"][:]
@@ -352,7 +352,7 @@ class DataTransformer:
             lons = coord_group["Longitude"][:]
             time = coord_group["Time"][:]
             
-            data = self.reader.get_variable_data(var_name)[:]
+            data = obs_group[var_name][:]
             if data.shape != (len(time), len(lats), len(lons)):
                 error_msg = f"The shape of variable {var_name} : {data.shape} is not (time, lat, lon) "
                 self._log_operation(
@@ -512,8 +512,7 @@ class DataPreprocessor:
 
         try:
             # 数据获取与转换（需确保reader已注入）
-            raw_data = getattr(self, 'reader').get_variable_data(data_name)
-            series = self.transformer.to_series(raw_data, data_name)
+            series = self.transformer.variable_to_series(data_name)
             
             # 转换为数值类型
             numeric_series = pd.to_numeric(
@@ -1124,9 +1123,7 @@ class DataAnalyzer:
                 if stat_func == 'quantile':
                     result = rolled.quantile(kwargs.get('q')).iloc[0]
                 else:
-                    result = getattr(rolled, stat_func)()
-
-                result = getattr(rolled, stat_func)()#调用方法
+                    result = getattr(rolled, stat_func)()#调用方法
             else:
                 result = rolled.apply(stat_func, **kwargs)
             
@@ -1482,14 +1479,27 @@ class TimeResampler:
                 lon_slice=lon_slice
             )
             
-            # 重置索引以便重采样
-            df_reset = df.reset_index(level=['lat', 'lon'])
+            df_reset = df.reset_index()
             
+            # 确保时间列是datetime类型
+            df_reset['time'] = pd.to_datetime(df_reset['time'])
+            
+            # 设置时间索引
+            df_time_index = df_reset.set_index('time')
+            
+            # 分组重采样
             if isinstance(method, str):
-                resampled = df_reset.groupby('time').resample(rule, on='time')[variable_name].agg(method)
+                # 对每个(lat,lon)位置分组后进行时间重采样
+                resampled = (df_time_index
+                            .groupby(['lat', 'lon'])[variable_name]
+                            .resample(rule)
+                            .agg(method))
             else:
-                resampled = df_reset.groupby('time').resample(rule, on='time')[variable_name].apply(method)
-            
+                resampled = (df_time_index
+                            .groupby(['lat', 'lon'])[variable_name]
+                            .resample(rule)
+                            .apply(method))    
+                
             # 重建MultiIndex
             result = resampled.unstack(level=['lat', 'lon'])
             
