@@ -25,12 +25,12 @@ class DataConverter:
             ("°F", "°C"): lambda x: (x - 32) * 5/9,
             ("°F", "K"): lambda x: (x - 32) * 5/9 + 273.15,
             ("K", "°F"): lambda x: (x - 273.15) * 9/5 + 32
-        }
+            }
         key = (from_unit, to_unit)
         if key in converters:
             return converters[key](values)
         raise ValueError(f"Unsupported conversion: {from_unit} → {to_unit}")
-
+    
     @staticmethod
     def convert_pressure(values, from_unit, to_unit):
         """压强单位转换"""
@@ -55,7 +55,7 @@ class DataConverter:
             ("gpm", "m²/s²"): lambda x: x * g0,
             ("m²/s²", "dagpm"): lambda x: x / g0 / 10,
             ("dagpm", "m²/s²"): lambda x: x * g0 * 10
-        }
+            }
         key = (from_unit, to_unit)
         if key in converters:
             return converters[key](values)
@@ -66,33 +66,33 @@ class Logger:
     def __init__(self, log_file="hdf5_processing.log"):
         self._logger = logging.getLogger(__name__)
         self._logger.setLevel(logging.DEBUG)  # 全局最低级别（所有Handler会二次过滤）
-
+        
         #文件处理器（记录DEBUG及以上级别）
         file_handler = RotatingFileHandler(
             filename=log_file,
             maxBytes=1e6,  # 1MB
             backupCount=3,
             encoding='utf-8'
-        )
+            )
         file_handler.setLevel(logging.DEBUG)  # 文件单独设置级别
         file_formatter = logging.Formatter(
             '%(asctime)s - %(levelname)s - %(message)s'
-        )
+            )
         file_handler.setFormatter(file_formatter)
-
+        
         #控制台处理器（仅记录ERROR及以上级别）
         console_handler = logging.StreamHandler()
         console_handler.setLevel(logging.ERROR)  # 控制台单独设置级别
         console_formatter = logging.Formatter(
             '[%(levelname)s] %(message)s'  # 简洁的终端格式
-        )
+            )
         console_handler.setFormatter(console_formatter)
-
+        
         # 避免重复添加处理器（防止多次实例化时重复日志）
         if not self._logger.handlers:
             self._logger.addHandler(file_handler)
             self._logger.addHandler(console_handler)
-
+    
     def log_operation(self, operation, status="SUCCESS", message="", exception=None):
         """
         记录操作日志
@@ -120,7 +120,7 @@ class Logger:
             "SUCCESS": logging.INFO,
             "WARNING": logging.WARNING,
             "FAILED": logging.ERROR
-        }.get(status, logging.INFO)
+            }.get(status, logging.INFO)
         
         self._logger.log(log_level, log_msg)
         
@@ -135,7 +135,7 @@ class DataTransformer:
         """仅在日志启用时记录操作"""
         if self._logger is not None:
             self._logger.log_operation(**kwargs)
-
+    
     def to_dataframe(self, include_attrs: bool =False) -> pd.DataFrame:
         """
         将整个HDF5文件转为DataFrame,使用三维坐标索引 (time, lat, lon)
@@ -170,7 +170,7 @@ class DataTransformer:
             index = pd.MultiIndex.from_product(
                 [time, lats, lons],
                 names=["time", "lat", "lon"]
-            )
+                )
             
             vars_processed = 0
             for var_name in obs_group:
@@ -199,7 +199,7 @@ class DataTransformer:
                 operation=operation, 
                 status="SUCCESS", 
                 message=f"Converted {vars_processed} variables to DataFrame"
-            )
+                )
             return (df, attrs_dict) if include_attrs else df
         except ValueError:
             raise
@@ -208,7 +208,8 @@ class DataTransformer:
                 operation=operation, 
                 status="FAILED", 
                 message=str(e), 
-                exception=e)
+                exception=e
+                )
             raise
         
     def selected_to_dataframe(self, variable_names: Sequence[str], 
@@ -234,14 +235,14 @@ class DataTransformer:
             operation=operation,
             status="STARTED",
             message=f"Include attributes: {include_attrs}"
-        )
+            )
         
         # 参数校验
         if not isinstance(variable_names, (list, tuple)):
             error_msg = (
                 f"variable_names must be sequence of str, "
                 f"got {type(variable_names).__name__}"
-            )
+                )
             self._log_operation(
                 operation=operation, 
                 status="FAILED", 
@@ -272,7 +273,7 @@ class DataTransformer:
                     operation=operation, 
                     status="FAILED", 
                     message=error_msg
-                )
+                    )
                 raise KeyError(error_msg)
             
             lats = coord_group["Latitude"][:]
@@ -282,7 +283,7 @@ class DataTransformer:
             index = pd.MultiIndex.from_product(
                 [time, lats, lons],
                 names=["time", "lat", "lon"]
-            )
+                )
             
             for var_name in variable_names:
                 if var_name == "Coordinates":
@@ -297,7 +298,7 @@ class DataTransformer:
                 self._log_operation(
                     operation=f"Processing variable {var_name}",
                     status="STARTED"
-                )
+                    )
                 data = obs_group[var_name][:]
                 if data.shape != (len(time), len(lats), len(lons)):
                     error_msg = f"Shape mismatch for {var_name}: {data.shape} != ({len(time)}, {len(lats)}, {len(lons)})"
@@ -310,14 +311,14 @@ class DataTransformer:
                 self._log_operation(
                     operation=f"Processing variable {var_name}",
                     status="SUCCESS"
-                )
+                    )
             
             df = pd.DataFrame(data_dict, index=index)
             self._log_operation(
                 operation=operation,
                 status="SUCCESS",
                 message=f"Converted {len(variable_names)} variables to DataFrame"
-            )
+                )
             return (df, attrs_dict) if include_attrs else df 
         except (KeyError, ValueError):
             raise
@@ -327,7 +328,7 @@ class DataTransformer:
                 status="FAILED",
                 message=str(e),
                 exception=e
-            )
+                )
             raise        
         
     def variable_to_series(self, var_name: str) -> pd.Series:
@@ -336,7 +337,8 @@ class DataTransformer:
         self._log_operation(
             operation=operation, 
             status="STARTED",
-            message=f"var: {var_name}")
+            message=f"var: {var_name}"
+            )
         try: 
             obs_group = self.reader.get_dataset("Observations")
             coord_group = obs_group["Coordinates"]
@@ -358,7 +360,7 @@ class DataTransformer:
             index = pd.MultiIndex.from_product(
                 [time, lats, lons],
                 names=["time", "lat", "lon"]
-            )
+                )
             series = pd.Series(data.flatten(), index=index)
             self._log_operation(
                 operation=operation, 
@@ -370,7 +372,8 @@ class DataTransformer:
                 operation=operation, 
                 status="FAILED", 
                 message=str(e), 
-                exception=e)
+                exception=e
+                )
             raise
             
 # ---------------------- 数据处理组件 ----------------------
@@ -380,12 +383,12 @@ class DataPreprocessor:
         self.reader =  hdf5_reader
         self.transformer = getattr(hdf5_reader, 'pdtransform')
         self._logger = getattr(hdf5_reader, '_logger', None)
-
+    
     def _log_operation(self, **kwargs):
         """仅在日志启用时记录操作"""
         if self._logger is not None:
             self._logger.log_operation(**kwargs)
-
+    
     def time_cleaner(self, time_name: str, drop_nat: bool = False, 
                      raise_errors: bool = False) -> pd.Series:
         """
@@ -407,19 +410,19 @@ class DataPreprocessor:
             operation=operation,
             status="STARTED", 
             message=f"Variable: {time_name}, drop={drop_nat}"
-        )
+            )
         try:
             # infer_datetime_format=True 可以尝试自动推断格式，提高解析速度
             # errors='coerce' 会将无法解析的日期变成 NaT (Not a Time)
             time_series = self.transformer.to_series(
                 self.reader.get_variable_data(time_name),
                 time_name
-            )
+                )
             time_converted = pd.to_datetime(
                 time_series,
                 infer_datetime_format=True,
                 errors='coerce' if not raise_errors else 'raise'
-            )
+                )
             
             nat_count = time_converted.isna().sum()
             if nat_count == 0:
@@ -427,7 +430,7 @@ class DataPreprocessor:
                     operation=operation,
                     status="SUCCESS", 
                     message=f"Clean timestamps: {len(time_converted)}"
-                )
+                    )
                 return time_converted
             warning_msg = f"Found {nat_count} invalid timestamps (NaT) in '{time_name}'"
             if raise_errors:
@@ -435,7 +438,7 @@ class DataPreprocessor:
                     operation=operation,
                     status="FAILED", 
                     message=f"{warning_msg} - Raise"
-                )
+                    )
                 raise ValueError(warning_msg)
             if drop_nat:
                 cleaned = time_converted.dropna()
@@ -447,14 +450,14 @@ class DataPreprocessor:
                 operation=operation,
                 status="WARNING", 
                 message=action_message
-            )
+                )
             return cleaned
         except Exception as e:
             self._log_operation(
                 operation=operation,
                 status="FAILED", 
                 message=str(e)
-            )
+                )
             raise
     
     def __base_cleaner(self, data_name: str, min_threshold = None, max_threshold = None, 
@@ -485,8 +488,8 @@ class DataPreprocessor:
             message=f"Variable: {data_name}, "
                    f"Thresholds: [{min_threshold}, {max_threshold}], "
                    f"Fill: {fill_method if fill_nat else 'None'}"
-        )
-
+                   )
+        
         # 参数校验
         if drop_nat and fill_nat:
             error_msg = "Cannot enable both drop_nat and fill_nat simultaneously"
@@ -494,9 +497,9 @@ class DataPreprocessor:
                 operation=operation,
                 status="FAILED", 
                 message=error_msg
-            )
+                )
             raise ValueError(error_msg)
-
+        
         try:
             # 数据获取与转换（需确保reader已注入）
             series = self.transformer.variable_to_series(data_name)
@@ -505,8 +508,8 @@ class DataPreprocessor:
             numeric_series = pd.to_numeric(
                 series, 
                 errors='coerce' if not raise_errors else 'raise'
-            )
-
+                )
+            
             # 阈值检测
             invalid_mask = pd.Series(False, index=numeric_series.index)
             if min_threshold is not None:
@@ -516,7 +519,7 @@ class DataPreprocessor:
             
             cleaned = numeric_series.mask(invalid_mask, np.nan)
             nat_count = invalid_mask.sum()
-
+            
             # 无无效值情况
             if nat_count == 0:
                 self._log_operation(
@@ -525,7 +528,7 @@ class DataPreprocessor:
                     message="No invalid values found"
                     )
                 return cleaned
-
+            
             # 无效值处理
             warning_msg = f"Found {nat_count} invalid values ({nat_count/len(cleaned):.1%})"
             if raise_errors:
@@ -547,19 +550,19 @@ class DataPreprocessor:
                         method=fill_method, 
                         limit=fill_limit,
                         order=3 if fill_method == 'spline' else None
-                    )
+                        )
                     action = f"Filled ({fill_method})"
             else:
                 result = cleaned
                 action = "Kept"
-
+                
             self._log_operation(
                 operation=operation, 
                 status="WARNING",
                 message=f"{warning_msg} - {action}"
-            )
+                )
             return result
-
+        
         except Exception as e:
             self._log_operation(
                 operation=operation, 
@@ -597,7 +600,7 @@ class DataPreprocessor:
             fill_method=fill_method, fill_limit=fill_limit,
             raise_errors=raise_errors,
             data_type="wind_speed"
-        )
+            )
             
     def temperature_cleaner(self, temperature_name: str, 
                             temperature_min_threshold = None, temperature_max_threshold = None,
@@ -633,7 +636,7 @@ class DataPreprocessor:
             fill_limit=fill_limit,
             raise_errors=raise_errors,
             data_type="temperature"
-        )
+            )
     
     def humidity_cleaner(self, humidity_name: str, humidity_threshold = None, 
                          drop_nat: bool = False, fill_nat: bool = False, 
@@ -664,7 +667,7 @@ class DataPreprocessor:
             fill_method=fill_method, fill_limit=fill_limit,
             raise_errors=raise_errors,
             data_type="humidity"
-        )
+            )
     
     def precipitation_cleaner(self, precipitation_name: str, precipitation_threshold = None, 
                               drop_nat: bool = False, fill_nat: bool = False, 
@@ -695,7 +698,7 @@ class DataPreprocessor:
             fill_method=fill_method, fill_limit=fill_limit,
             raise_errors=raise_errors,
             data_type="precipitation"
-        )
+            )
 
 # ---------------------- 数据分析组件 ----------------------
 class DataAnalyzer:
@@ -740,7 +743,7 @@ class DataAnalyzer:
             operation=operation,
             status="STARTED",
             message=f"Slices - time: {time_slice}, lat: {lat_slice}, lon: {lon_slice}"
-        )
+            )
         
         try:
             # 获取完整数据集
@@ -769,19 +772,19 @@ class DataAnalyzer:
             index = pd.MultiIndex.from_product(
                 [times_sliced, lats_sliced, lons_sliced],
                 names=["time", "lat", "lon"]
-            )
+                )
             
             # 创建DataFrame
             df = pd.DataFrame(
                 data=data_slice.reshape(-1, 1),  # 展平数据
                 index=index,
                 columns=[variable_name]
-            )
+                )
             self._log_operation(
                 operation=operation,
                 status="SUCCESS",
                 message=f"Result shape: {df.shape}"
-            )
+                )
             return df
             
         except KeyError as e:
@@ -791,7 +794,7 @@ class DataAnalyzer:
                 status="FAILED",
                 message=error_msg,
                 exception=e
-            )
+                )
             raise KeyError(error_msg) from e
         except Exception as e:
             self._log_operation(
@@ -799,7 +802,7 @@ class DataAnalyzer:
                 status="FAILED",
                 message=f"Unexpected error: {str(e)}",
                 exception=e
-            )
+                )
             raise
     
     def get_variables_slices(self, variable_names: List[str], 
@@ -823,8 +826,8 @@ class DataAnalyzer:
             operation=operation,
             status="STARTED",
             message=f"Variables: {variable_names}, "
-                   f"Slices - time: {time_slice}, lat: {lat_slice}, lon: {lon_slice}"
-        )
+                    f"Slices - time: {time_slice}, lat: {lat_slice}, lon: {lon_slice}"
+            )
         try:
             dfs = []
             for var_name in variable_names:
@@ -832,7 +835,7 @@ class DataAnalyzer:
                     operation=f"Processing variable: {var_name}",
                     status="PROGRESS",
                     message=f"Progress: {len(dfs)+1}/{len(variable_names)}"
-                )
+                    )
                 df = self.get_variable_slice(var_name, time_slice, lat_slice, lon_slice)
                 dfs.append(df)
             
@@ -844,7 +847,7 @@ class DataAnalyzer:
                 operation=operation,
                 status="SUCCESS",
                 message=f"Total shape: {result.shape}, Variables: {list(result.columns)}"
-            )
+                )
             
             return result       
         except Exception as e:
@@ -854,7 +857,7 @@ class DataAnalyzer:
                 status="FAILED",
                 message=f"Error: {str(e)}",
                 exception=e
-            )
+                )
             raise
     # -------------------- 统计方法 --------------------        
     def __calculate_statistic(self, variable_name: str, 
@@ -879,7 +882,7 @@ class DataAnalyzer:
             operation=operation,
             status="STARTED",
             message=f"Slices - time: {time_slice}, lat: {lat_slice}, lon: {lon_slice}"
-        )
+            )
         
         try:
             df = self.get_variable_slice(variable_name, time_slice, lat_slice, lon_slice)
@@ -897,7 +900,7 @@ class DataAnalyzer:
                 operation=operation,
                 status="SUCCESS",
                 message=f"{stat_name} value: {result:.4f}" if isinstance(result, (int, float)) else ""
-            )
+                )
             
             return result
         except Exception as e:
@@ -906,7 +909,7 @@ class DataAnalyzer:
                 status="FAILED",
                 message=f"Error: {str(e)}",
                 exception=e
-            )
+                )
             raise
             
     def get_quantile_slice(self, variable_name: str, quantile: float = 0.25, 
@@ -919,7 +922,7 @@ class DataAnalyzer:
                 operation=f"Get {quantile*100}% quantile: {variable_name}",
                 status="FAILED",
                 message=error_msg
-            )
+                )
             raise ValueError(error_msg)
         return self.__calculate_statistic(
             variable_name=variable_name,
@@ -929,7 +932,7 @@ class DataAnalyzer:
             lat_slice=lat_slice,
             lon_slice=lon_slice,
             q=quantile
-        )
+            )
     
     def get_mean(self, variable_name: str, time_slice: slice = None, 
                  lat_slice: slice = None, lon_slice: slice = None) -> float:
@@ -941,7 +944,7 @@ class DataAnalyzer:
             time_slice=time_slice,
             lat_slice=lat_slice,
             lon_slice=lon_slice
-        )
+            )
     
     def get_std_deviation(self, variable_name: str, time_slice: slice = None, 
                           lat_slice: slice = None, lon_slice: slice = None) -> float:
@@ -953,8 +956,8 @@ class DataAnalyzer:
             time_slice=time_slice,
             lat_slice=lat_slice,
             lon_slice=lon_slice
-        )
-
+            )
+    
     def get_min(self, variable_name: str, time_slice: slice = None, 
                 lat_slice: slice = None, lon_slice: slice = None) -> float:
         """获取最小值"""
@@ -965,7 +968,7 @@ class DataAnalyzer:
             time_slice=time_slice,
             lat_slice=lat_slice,
             lon_slice=lon_slice
-        )
+            )
     
     def get_max(self, variable_name: str, time_slice: slice = None, 
                 lat_slice: slice = None, lon_slice: slice = None) -> float:
@@ -977,7 +980,7 @@ class DataAnalyzer:
             time_slice=time_slice,
             lat_slice=lat_slice,
             lon_slice=lon_slice
-        )
+            )
     
     def get_median(self, variable_name: str, time_slice: slice = None, 
                    lat_slice: slice = None, lon_slice: slice = None) -> float:
@@ -989,7 +992,7 @@ class DataAnalyzer:
             time_slice=time_slice,
             lat_slice=lat_slice,
             lon_slice=lon_slice
-        )
+            )
     
     def get_sum(self, variable_name: str, time_slice: slice = None, 
                 lat_slice: slice = None, lon_slice: slice = None) -> float:
@@ -1001,7 +1004,7 @@ class DataAnalyzer:
             time_slice=time_slice,
             lat_slice=lat_slice,
             lon_slice=lon_slice
-        )
+            )
     
     def get_custom_stat(self, variable_name: str, stat_func: Callable, stat_name: str, 
                         time_slice: slice = None, lat_slice: slice = None, lon_slice: slice = None, 
@@ -1015,7 +1018,7 @@ class DataAnalyzer:
             lat_slice=lat_slice,
             lon_slice=lon_slice,
             **kwargs
-        )
+            )
     
     def get_stats(self, variable_name: str, states: List[Union[str, Callable]], 
                   time_slice: slice = None, 
@@ -1037,7 +1040,7 @@ class DataAnalyzer:
                 lat_slice=lat_slice,
                 lon_slice=lon_slice,
                 **kwargs
-            )
+                )
         return results
     
     # -------------------- 滑动窗口 --------------------
@@ -1068,7 +1071,7 @@ class DataAnalyzer:
             operation=operation,
             status="STARTED",
             message=f"Axis: {'time' if time_axis else 'space'}, Function: {stat_func}"
-        )
+            )
         
         try:
             df = self.get_variable_slice(variable_name, time_slice, lat_slice, lon_slice)
@@ -1092,7 +1095,7 @@ class DataAnalyzer:
                 operation=operation,
                 status="SUCCESS",
                 message=f"Result shape: {result.shape}"
-            )
+                )
             return result.unstack(level=[0,1]) if time_axis else result
             
         except Exception as e:
@@ -1101,7 +1104,7 @@ class DataAnalyzer:
                 status="FAILED",
                 message=f"Error: {str(e)}",
                 exception=e
-            )
+                )
             raise
             
     def rolling_quantile(self, variable_name: str,  window_size: int, 
@@ -1121,7 +1124,7 @@ class DataAnalyzer:
                 operation=f"Get {quantile*100}% quantile: {variable_name}",
                 status="FAILED",
                 message=error_msg
-            )
+                )
             raise ValueError(error_msg)
         return self.__rolling_window(
             variable_name=variable_name,
@@ -1130,7 +1133,7 @@ class DataAnalyzer:
             stat_name=f"{quantile*100}% quantile",
             time_axis=time_axis,
             **kwargs
-        )
+            )
     
     def rolling_mean(self, variable_name: str, window_size: int, 
                      time_axis: bool = True, **kwargs) -> pd.DataFrame:
@@ -1147,7 +1150,7 @@ class DataAnalyzer:
             window_size=window_size,
             time_axis=time_axis,
             **kwargs
-        )
+            )
     
     def rolling_std_deviation(self, variable_name: str, window_size: int, 
                               time_axis: bool = True, **kwargs) -> pd.DataFrame:
@@ -1166,7 +1169,7 @@ class DataAnalyzer:
             stat_name='standard deviation',
             time_axis=time_axis,
             **kwargs
-        )
+            )
     
     def rolling_min(self, variable_name: str, window_size: int, 
                     time_axis: bool = True, **kwargs) -> pd.DataFrame:
@@ -1185,7 +1188,7 @@ class DataAnalyzer:
             stat_name='minimum',
             time_axis=time_axis,
             **kwargs
-        )
+            )
     
     def rolling_max(self, variable_name: str, window_size: int, 
                     time_axis: bool = True, **kwargs) -> pd.DataFrame:
@@ -1204,7 +1207,7 @@ class DataAnalyzer:
             stat_name='maximum',
             time_axis=time_axis,
             **kwargs
-        )
+            )
     
     def rolling_median(self, variable_name: str, window_size: int, 
                        time_axis: bool = True, **kwargs) -> pd.DataFrame:
@@ -1223,7 +1226,7 @@ class DataAnalyzer:
             stat_name='median',
             time_axis=time_axis,
             **kwargs
-        )
+            )
     
     def rolling_sum(self, variable_name: str, window_size: int,
                     time_axis: bool = True, **kwargs) -> pd.DataFrame:
@@ -1242,7 +1245,7 @@ class DataAnalyzer:
             stat_name='sum',
             time_axis=time_axis,
             **kwargs
-        )
+            )
     
     def custom_stat(self, variable_name: str, window_size: int, 
                     stat_func: Callable, stat_name: str, 
@@ -1263,7 +1266,7 @@ class DataAnalyzer:
             stat_name=stat_name,
             time_axis=time_axis,
             **kwargs
-        )
+            )
     
     # -------------------- 相关性分析 --------------------    
     def calculate_temporal_correlation(self, var1_name: str, var2_name: str, 
@@ -1306,7 +1309,7 @@ class DataAnalyzer:
                 operation=operation,
                 status="SUCCESS",
                 message=f"Correlation: {corr:.3f}"
-            )
+                )
             return corr  
         except Exception as e:
             self._log_operation(
@@ -1314,7 +1317,7 @@ class DataAnalyzer:
                 status="FAILED",
                 message=f"Error: {str(e)}",
                 exception=e
-            )
+                )
             raise
             
     def calculate_spatial_correlation(self, var1_name: str, var2_name: str, 
@@ -1351,14 +1354,14 @@ class DataAnalyzer:
             spatial_data = pd.DataFrame({
                 'var1': df1[var1_name].values.flatten(),
                 'var2': df2[var2_name].values.flatten()
-            })
+                })
             corr = spatial_data.corr(method=method).iloc[0, 1]
             
             self._log_operation(
                 operation=operation,
                 status="SUCCESS",
                 message=f"Spatial correlation: {corr:.3f}"
-            )
+                )
             return corr
             
         except Exception as e:
@@ -1367,7 +1370,7 @@ class DataAnalyzer:
                 status="FAILED",
                 message=f"Error: {str(e)}",
                 exception=e
-            )
+                )
             raise
 
 # ---------------------- 时间重采样组件 ----------------------
@@ -1382,12 +1385,12 @@ class TimeResampler:
         self.reader = hdf5_reader
         self._logger = getattr(hdf5_reader, '_logger', None)
         self.analyzer = DataAnalyzer(hdf5_reader)  # 复用DataAnalyzer的功能
-
+    
     def _log_operation(self, **kwargs):
         """仅在日志启用时记录操作"""
         if self._logger is not None:
             self._logger.log_operation(**kwargs)
-
+    
     def resample_time(self, variable_name: str, rule: str, method: str = 'mean', 
                       lat_slice: slice = None, lon_slice: slice = None, **kwargs) -> pd.DataFrame:
         """
@@ -1413,13 +1416,13 @@ class TimeResampler:
             operation=operation,
             status="STARTED",
             message=f"Method: {method}, lat: {lat_slice}, lon: {lon_slice}"
-        )
+            )
         try:
             df = self.analyzer.get_variable_slice(
                 variable_name,
                 lat_slice=lat_slice,
                 lon_slice=lon_slice
-            )
+                )
             
             df_reset = df.reset_index()
             
@@ -1449,7 +1452,7 @@ class TimeResampler:
                 operation=operation,
                 status="SUCCESS",
                 message=f"Resampled shape: {result.shape}"
-            )
+                )
             
             return result
         except Exception as e:
@@ -1458,15 +1461,14 @@ class TimeResampler:
                 status="FAILED",
                 message=f"Error: {str(e)}",
                 exception=e
-            )
+                )
             raise
-
+    
     def resample_multi_vars(self, variable_names: List[str], rule: str, 
-                            method: Union[str, Dict[str, str]] = 'mean',
-                            lat_slice: slice = None,
-                            lon_slice: slice = None,
-                            **kwargs
-                            ) -> Dict[str, pd.DataFrame]:
+                            method: Union[str, Dict[str, str]] = 'mean', 
+                            lat_slice: slice = None, 
+                            lon_slice: slice = None, 
+                            **kwargs) -> Dict[str, pd.DataFrame]:
         """
         批量重采样多个变量
         
@@ -1485,7 +1487,7 @@ class TimeResampler:
             operation=operation,
             status="STARTED",
             message=f"Variables: {variable_names}, Method: {method}"
-        )
+            )
         try:
             results = {}
             for var in variable_names:
@@ -1495,7 +1497,7 @@ class TimeResampler:
                     operation=f"Processing {var}",
                     status="PROGRESS",
                     message=f"Method: {current_method}"
-                )
+                    )
                 
                 results[var] = self.resample_time(
                     variable_name=var,
@@ -1504,23 +1506,23 @@ class TimeResampler:
                     lat_slice=lat_slice,
                     lon_slice=lon_slice,
                     **kwargs
-                )
+                    )
             
             self._log_operation(
                 operation=operation,
                 status="SUCCESS",
                 message=f"Completed {len(results)} variables"
-            )
+                )
             
             return results
-
+        
         except Exception as e:
             self._log_operation(
                 operation=operation,
                 status="FAILED",
                 message=f"Error: {str(e)}",
                 exception=e
-            )
+                )
             raise
 
 # ---------------------- 数据筛选组件 ----------------------
@@ -1566,20 +1568,20 @@ class DataFilter:
                     time_slice=time_slice,
                     lat_slice=lat_slice,
                     lon_slice=lon_slice
-                )
+                    )
             else:
                 df = self.analyzer.get_variables_slices(
                     variable_names,
                     time_slice=time_slice,
                     lat_slice=lat_slice,
                     lon_slice=lon_slice
-                )
+                    )
             
             self._log_operation(
                 operation=operation,
                 status="SUCCESS",
                 message=f"Loaded data shape: {df.shape}"
-            )
+                )
             return df
         except Exception as e:
             self._log_operation(
@@ -1587,12 +1589,11 @@ class DataFilter:
                 status="FAILED",
                 message=f"Error: {str(e)}",
                 exception=e
-            )
+                )
             raise
     
     def filter_by_condition(self, df: pd.DataFrame, variable_name: str,
-                            condition: str, value: Union[float, int, str]
-                            ) -> pd.DataFrame:
+                            condition: str, value: Union[float, int, str]) -> pd.DataFrame:
         """
         根据条件筛选数据
         
@@ -1625,7 +1626,7 @@ class DataFilter:
                 '<=': operator.le,
                 '==': operator.eq,
                 '!=': operator.ne
-            }
+                }
             
             # 获取对应的运算符函数
             op_func = op_map.get(condition)
@@ -1635,7 +1636,7 @@ class DataFilter:
                     operation=operation,
                     status="FAILED",
                     message=error_msg
-                )
+                    )
                 raise ValueError(error_msg)
             
             # 应用筛选条件
@@ -1646,7 +1647,7 @@ class DataFilter:
                 operation=operation,
                 status="SUCCESS",
                 message=f"Filtered records: {len(filtered)}"
-            )
+                )
             return filtered
         except ValueError:
             raise
@@ -1656,7 +1657,7 @@ class DataFilter:
                 status="FAILED",
                 message=f"Error: {str(e)}",
                 exception=e
-            )
+                )
             raise
     
     def filter_by_query(self, df: pd.DataFrame, query_str: str) -> pd.DataFrame:
@@ -1679,7 +1680,7 @@ class DataFilter:
                 operation=operation,
                 status="SUCCESS",
                 message=f"Filtered records: {len(filtered)}"
-            )
+                )
             return filtered    
         except Exception as e:
             self._log_operation(
@@ -1687,5 +1688,5 @@ class DataFilter:
                 status="FAILED",
                 message=f"Error: {str(e)}",
                 exception=e
-            )
+                )
             raise

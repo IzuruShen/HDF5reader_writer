@@ -52,7 +52,7 @@ class HDF5reader_writer:
         self.dataanalyzer = DataAnalyzer(self)
         self.timeresampler = TimeResampler(self)
         self.datafilier = DataFilter(self)
-
+    
     def __enter__(self):
         """with语句内确保文件可以打开"""
         try:
@@ -94,7 +94,7 @@ class HDF5reader_writer:
                     operation=operation,
                     status="STARTED",
                     message=f"File: {self.__file_path}"
-                )
+                    )
                 
                 # 如果是写入模式，先尝试删除现有文件
                 if self.__mode == 'w':
@@ -104,7 +104,7 @@ class HDF5reader_writer:
                 self._log_operation_sure(
                     operation=operation,
                     status="SUCCESS"
-                )
+                    )
                 return
             except (FileNotFoundError, PermissionError, RuntimeError) as e:
                 e_dict={
@@ -118,14 +118,14 @@ class HDF5reader_writer:
                     status="RETRY",
                     message=message,
                     exception=e
-                )
+                    )
                 if attempt == max_retries - 1:
                     self._log_operation_sure(
                         operation="Open file",
                         status="FAILED",
                         message=f"Max retries exceeded after {max_retries} attempts",
                         exception=e
-                    )
+                        )
                     raise FileNotFoundError(f"File not found: {self.__file_path}") from e
             except Exception as e:
                 self._log_operation_sure(
@@ -133,14 +133,14 @@ class HDF5reader_writer:
                     status="FAILED",
                     message=f"Unexpected {type(e).__name__}: {str(e)}",
                     exception=e
-                )
+                    )
                 if attempt == max_retries - 1:
                     self._log_operation_sure(
                         operation="Open file",
                         status="FAILED",
                         message=f"Max retries exceeded after {max_retries} attempts",
                         exception=e
-                    )
+                        )
                     raise
             time.sleep(retry_delay)  # 重试前等待..
     
@@ -151,20 +151,20 @@ class HDF5reader_writer:
             operation=operation,
             status="STARTED",
             message=f"File: {self.__file_path}"
-        )
+            )
         if self.__dataset is not None:
             try:
                 self.__dataset.close()
                 self._log_operation_sure(
                     operation=operation,
                     status="SUCCESS"
-                )
+                    )
             except Exception as e:
                 self._log_operation_sure(
                     operation=operation,
                     status="FAILED",
                     message=f"Warning: Error closing HDF5 file: {e}"
-                )
+                    )
                 raise
             finally:
                 self.__dataset = None
@@ -188,7 +188,7 @@ class HDF5reader_writer:
             operation=operation,
             status="STARTED",
             message=f"Group path: {group_path}"
-        )
+            )
         try:
             if self.__dataset is None:
                 self.__openhdf5()
@@ -209,7 +209,7 @@ class HDF5reader_writer:
                 operation=operation,
                 status="SUCCESS",
                 message=f"Type: {type(target).__name__}{shape_info}"
-            )
+                )
             
             return target
         except Exception as e:
@@ -218,19 +218,19 @@ class HDF5reader_writer:
                 status="FAILED",
                 message="Error: {type(e).__name__}: {str(e)}",
                 exception=e
-            )
+                )
             raise
     
     def get_variable_data(self, variable_name: str) -> np.ndarray:
         """
         读取 Observations 组中指定变量的数据值
-
+        
         参数:
             variable_name: 目标变量名称
-
+            
         返回:
             该变量的数据值
-
+            
         异常:
             ValueError: 如果指定变量不存在于数据集中
         """  
@@ -239,7 +239,7 @@ class HDF5reader_writer:
             operation=operation,
             status="STARTED",
             message=f"File: {self.__file_path}"
-        )
+            )
         group_path = "Observations/" + variable_name
         try:
             dataset = self.get_dataset(group_path=group_path)
@@ -247,7 +247,7 @@ class HDF5reader_writer:
             self._log_operation_sure(
                 operation=operation,
                 status="SUCCESS"
-            )
+                )
             return data
         except Exception as e:
             self._log_operation_sure(
@@ -255,7 +255,7 @@ class HDF5reader_writer:
                 status="FAILED",
                 message=str(e),
                 exception=e  # 传递异常对象
-            )
+                )
             raise  # 重新抛出异常            
     
     def get_global_attributes(self) -> Dict[str, Any]:
@@ -270,21 +270,21 @@ class HDF5reader_writer:
             operation=operation,
             status="STARTED",
             message=f"File: {self.__file_path}"
-        )
+            )
         try:
             h5_file = self.get_dataset()
             attributes = dict(h5_file.attrs)
             self._log_operation_sure(
                 operation=operation,
-                status="SUCCESS",
-            )
+                status="SUCCESS"
+                )
             return attributes
         except Exception as e:
             self._log_operation_sure(
                 operation=operation,
                 status="FAILED",
                 message=f"{type(e).__name__}: {str(e)}"
-            )
+                )
             raise
     
     def get_local_attributes(self, dataset_name: str) -> dict:
@@ -305,7 +305,7 @@ class HDF5reader_writer:
             operation=operation,
             status="STARTED",
             message=f"File: {self.__file_path}"
-        )
+            )
         try:
             h5_file=self.get_dataset()
             obs_group = h5_file["Observations"]
@@ -315,7 +315,7 @@ class HDF5reader_writer:
                     operation=operation,
                     status="SUCCESS",
                     message=f"attributes: {attributes.keys}"
-                )
+                    )
                 return attributes
             else:
                 raise ValueError(f"Dataset '{dataset_name}' not found in the Observations group.")
@@ -324,7 +324,7 @@ class HDF5reader_writer:
                 operation=operation,
                 status="FAILED",
                 message=f"{type(e).__name__}: {str(e)}"
-            )
+                )
             raise
     
     def summary_meteorological(self):
@@ -334,7 +334,7 @@ class HDF5reader_writer:
             operation=operation,
             status="STARTED",
             message=f"File: {self.__file_path}"
-        )
+            )
         try:
             print("全局属性：")
             ds = self.get_dataset()
@@ -345,14 +345,14 @@ class HDF5reader_writer:
             print("\nObservations 组中的数据集：", list(obs_group.keys()))
             self._log_operation_sure(
                 operation=operation,
-                status="SUCCESS",
-            )
+                status="SUCCESS"
+                )
         except Exception as e:
             self._log_operation_sure(
                 operation=operation,
                 status="FAILED",
                 message=f"{type(e).__name__}: {str(e)}"
-            )
+                )
             raise
     
     # 气象数据写入方法
@@ -386,7 +386,7 @@ class HDF5reader_writer:
             message=f"File: {self.__file_path}, Dimensions: "
                     f"time={time_points},lat={lat_points}, lon={lon_points} | "
                     f"Variables: {list(dic_data.keys()) if dic_data else 'None'}"
-        )
+                    )
         if self.__mode != 'w':
             error_msg = "File must be opened in 'w' mode for writing"
             self._log_operation_sure(operation, "FAILED", error_msg)
@@ -398,7 +398,7 @@ class HDF5reader_writer:
                     operation="Parameter check",
                     status="INFO",
                     message="dic_data is None, initialized as empty dict"
-                )
+                    )
             
             # 检查文件是否已打开
             if self.__dataset is None:
@@ -415,7 +415,7 @@ class HDF5reader_writer:
                         operation="Time values generation",
                         status="NOTE",
                         message=f"Auto-generated time values (0 to {time_points-1})"
-                    )
+                        )
                 elif len(time_values) != time_points:
                     error_msg = "time_values length must match time_points"
                     self._log_operation_sure("Parameter validation", "FAILED", error_msg)
@@ -432,7 +432,7 @@ class HDF5reader_writer:
                     operation="Parameter validation",
                     status="FAILED",
                     message=error_msg
-                )
+                    )
                 raise TypeError(error_msg)
             if lat_min >= lat_max or lon_min >= lon_max:
                 error_msg = "lat_min must be < lat_max and lon_min must be < lon_max"
@@ -440,7 +440,7 @@ class HDF5reader_writer:
                     operation="Parameter validation",
                     status="FAILED",
                     message=error_msg
-                )
+                    )
                 raise ValueError(error_msg)
             
             try:
@@ -450,14 +450,14 @@ class HDF5reader_writer:
                     operation="Coordinate generation",
                     status="SUCCESS",
                     message=f"Generated {lat_points}x{lon_points} grid"
-                )
+                    )
             except TypeError as e:
                 error_msg = f"Input must be numeric: {str(e)}"
                 self._log_operation_sure(
                     operation="Coordinate generation",
                     status="FAILED",
                     message=error_msg
-                )
+                    )
                 raise TypeError(error_msg)
             
             # 写入全局属性
@@ -468,7 +468,7 @@ class HDF5reader_writer:
             self._log_operation_sure(
                 operation="Global attributes",
                 status="NOTE"
-            )
+                )
             
             # 创建组结构
             obs_group = self.__dataset.create_group('Observations')
@@ -487,7 +487,7 @@ class HDF5reader_writer:
                 operation="Group structure",
                 status="NOTE",
                 message="Created Observations/Coordinates groups"
-            )
+                )
                 
             # 遍历 dic_data，写入所有变量
             vars_written = []
@@ -498,7 +498,7 @@ class HDF5reader_writer:
                         operation=f"Write variable {var_name}",
                         status="FAILED",
                         message=error_msg
-                    )
+                        )
                     raise ValueError(error_msg)
                 try:
                     data = var_info["data"]
@@ -506,19 +506,18 @@ class HDF5reader_writer:
                     description = var_info.get("description", "no description")
                     
                     expected_shape_3d = (time_points, lat_points, lon_points)
-    
                     if data.shape != expected_shape_3d:
                         error_msg = (
                             f"Data shape mismatch for {var_name}: "
                             f"expected {expected_shape_3d}, got {data.shape}"
-                        )
+                            )
                         self._log_operation_sure(
                             operation=f"Write variable {var_name}",
                             status="FAILED",
                             message=error_msg
-                        )
+                            )
                         raise ValueError(error_msg)
-    
+                        
                     dset = obs_group.create_dataset(var_name, data=data)
                     dset.attrs["units"] = units
                     dset.attrs["description"] = description
@@ -534,26 +533,26 @@ class HDF5reader_writer:
                         operation=f"Write variable {var_name}",
                         status="FAILED",
                         message=f"Missing required key: {str(e)}"
-                    )
+                        )
                     raise
                 except Exception as e:
                     self._log_operation_sure(
                         operation=f"Write variable {var_name}",
                         status="FAILED",
                         message=str(e)
-                    )
+                        )
                     raise
             self._log_operation_sure(
                 operation=operation,
                 status="SUCCESS",
                 message=f"Variables written: {vars_written}"
-            )
+                )
         except Exception as e:
             self._log_operation_sure(
                 operation=operation,
                 status="FAILED",
                 message=str(e)
-            )
+                )
             raise
     
     def append_meteo_hdf5(self, time_points: int, lat_points: int, lon_points: int,
@@ -585,14 +584,14 @@ class HDF5reader_writer:
             message=f"File: {self.__file_path}, Dimensions: "
                     f"time={time_points},lat={lat_points}, lon={lon_points} | "
                     f"Variables: {list(dic_data.keys()) if dic_data else 'None'}"
-        )
+                    )
         if self.__mode != 'a':
             error_msg = "File must be opened in 'a' mode for appending"
             self._log_operation_sure(
                 operation=operation,
                 status="FAILED",
                 message=error_msg
-            )
+                )
             raise PermissionError(error_msg)
         try:
             if dic_data is None:
@@ -601,7 +600,7 @@ class HDF5reader_writer:
                     operation="Parameter check",
                     status="NOTE",
                     message="dic_data is None, initialized as empty dict"
-                )
+                    )
             
             # 检查文件是否已打开
             if self.__dataset is None:
@@ -628,16 +627,14 @@ class HDF5reader_writer:
                         operation=f"Append variable {var_name}",
                         status="FAILED",
                         message=error_msg
-                    )
+                        )
                     raise ValueError(error_msg)
                 
                 try:  
                     data = var_info["data"]
                     units = var_info.get("units", "unknown")
                     description = var_info.get("description", "no description")
-    
-                    expected_shape_3d = (time_points, lat_points, lon_points)
-    
+                    expected_shape_3d = (time_points, lat_points, lon_points)  
                     if data.shape != expected_shape_3d:
                         error_msg = f"Data shape mismatch for {var_name}: "\
                                     f"expected ({lat_points}, {lon_points}), got {data.shape}"
@@ -645,7 +642,7 @@ class HDF5reader_writer:
                             operation=f"Append variable {var_name}",
                             status="FAILED",
                             message=error_msg
-                        )
+                            )
                         raise ValueError(error_msg)
                     
                     if var_name in obs_group:
@@ -654,7 +651,7 @@ class HDF5reader_writer:
                             operation=f"Append variable {var_name}",
                             status="NOTE",
                             message="Existing dataset deleted before append"
-                        )
+                            )
                         
                     dset = obs_group.create_dataset(var_name, data=data)
                     dset.attrs["units"] = units
@@ -665,32 +662,32 @@ class HDF5reader_writer:
                         operation=f"Append variable {var_name}",
                         status="SUCCESS",
                         message=f"Shape: {data.shape}, Units: {units}"
-                    )
+                        )
                 except KeyError as e:
                     self._log_operation_sure(
                         operation=f"Append variable {var_name}",
                         status="FAILED",
                         message=f"Missing required key '{e.args[0]}' in variable '{var_name}'"
-                    )
+                        )
                     raise 
                 except Exception as e:
                     self._log_operation_sure(
                         operation=f"Append variable {var_name}",
                         status="FAILED",
                         message=str(e)
-                    )
+                        )
                     raise 
             self._log_operation_sure(
                 operation=operation,
                 status="SUCCESS",
                 message=f"Variables appended: {vars_appended}"
-            )
+                )
         except Exception as e:
             self._log_operation_sure(
                 operation=operation,
                 status="FAILED",
                 message=str(e)
-            )
+                )
             raise
 
 time_points = 2
@@ -762,7 +759,7 @@ with HDF5reader_writer("D://test//hdf5_test_2.h5") as hdf5_reader:
         temperature_min_threshold=-20,
         temperature_max_threshold=40,
         fill_nat=True
-    )
+        )
     print("Cleaned Temperature:\n", cleaned_temp.head())
     
     # 测试wind_speed_cleaner
@@ -770,7 +767,7 @@ with HDF5reader_writer("D://test//hdf5_test_2.h5") as hdf5_reader:
         'WindSpeed',
         wind_speed_threshold=10,
         fill_nat=True
-    )
+        )
     print("\nCleaned Wind Speed:\n", cleaned_wind.head())
 
 # 测试DataAnalyzer
@@ -783,7 +780,7 @@ with HDF5reader_writer("D://test//hdf5_test_2.h5") as hdf5_reader:
         time_slice=slice(0,1),
         lat_slice=slice(0,3),
         lon_slice=slice(0,3)
-    )
+        )
     print("Temperature slice:\n", temp_slice)
     
     # 测试统计方法
@@ -808,7 +805,7 @@ with HDF5reader_writer("D://test//hdf5_test_2.h5") as hdf5_reader:
         ['Temperature', 'Humidity'], 
         'D',
         method={'Temperature': 'mean', 'Humidity': 'max'}
-    )
+        )
     print("\nDaily resampled data:")
     for var, df in daily_data.items():
         print(f"{var} shape: {df.shape}")
@@ -823,13 +820,13 @@ with HDF5reader_writer("D://test//hdf5_test_2.h5") as hdf5_reader:
     # 测试filter_by_condition
     hot_days = data_filter.filter_by_condition(
         df, 'Temperature', '>', 30
-    )
+        )
     print(f"Days with temperature >30°C: {len(hot_days)}")
     
     # 测试filter_by_query
     humid_hot = data_filter.filter_by_query(
         df, 'Temperature > 25 and Humidity > 70'
-    )
+        )
     print(f"Hot and humid days: {len(humid_hot)}")
 
 # 测试Converter

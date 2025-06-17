@@ -42,7 +42,7 @@ class HDF5reader_writer:
         self.__file_path = file_path
         self.__dataset = None
         self.__mode = mode  # 新增模式属性
-        
+    
     def __enter__(self):
         """with语句内确保文件可以打开，修改为可指定模式"""
         try:
@@ -85,7 +85,7 @@ class HDF5reader_writer:
             except RuntimeError as e:
                 if attempt == max_retries - 1:
                     raise RuntimeError("The parsing of the NetCDF file failed") from e
-            except Exception as e:
+            except Exception:
                 if attempt == max_retries - 1:
                     raise
             time.sleep(retry_delay)  # 重试前等待..
@@ -120,13 +120,13 @@ class HDF5reader_writer:
     def get_variable_data(self, variable_name):
         """
         读取 Observations 组中指定变量的数据值
-
+        
         参数:
             variable_name (str): 目标变量名称
-
+            
         返回:
             numpy.ndarray: 该变量的数据值
-
+            
         异常:
             ValueError: 如果指定变量不存在于数据集中
         """   
@@ -266,13 +266,13 @@ class HDF5reader_writer:
                 description = var_info.get("description", "no description")
                 
                 expected_shape_3d = (time_points, lat_points, lon_points)
-
+                
                 if data.shape != expected_shape_3d:
                     raise ValueError(
                         f"Data shape mismatch for {var_name}: "
                         f"expected ({lat_points}, {lon_points}), got {data.shape}"
-                    )
-
+                        )
+                    
                 dset = obs_group.create_dataset(var_name, data=data)
                 dset.attrs["units"] = units
                 dset.attrs["description"] = description
@@ -332,15 +332,14 @@ class HDF5reader_writer:
                 data = var_info["data"]
                 units = var_info.get("units", "unknown")
                 description = var_info.get("description", "no description")
-
+                
                 expected_shape_3d = (time_points, lat_points, lon_points)
-
                 if data.shape != expected_shape_3d:
                     raise ValueError(
                         f"Data shape mismatch for {var_name}: "
                         f"expected ({lat_points}, {lon_points}), got {data.shape}"
-                    )
-
+                        )
+                    
                 if var_name in obs_group:
                     del obs_group[var_name]  # 删除现有数据集（如果存在）
                     
@@ -363,11 +362,12 @@ times_value = pd.date_range(
     start = start_time, 
     periods = time_points, 
     freq = step
-)
+    )
 time_values = times_value.astype(np.int64) // 10**9  # 秒级时间戳
 # 生成随机气象数据
 temperature = np.random.uniform(low=-20, high=40, size=(time_points, lat_points, lon_points))
 humidity = np.random.uniform(low=0, high=100, size=(time_points, lat_points, lon_points))
+
 dic_data = {
     'Temperature': {
         "data": temperature,
@@ -378,8 +378,8 @@ dic_data = {
         "data": humidity,
         "units": "%",
         "description": "humidity"
-        }
     }
+            }
 
 with HDF5reader_writer("D:/test/hdf5_test_1.h5", 'w') as h5file:
     h5file.write_meteo_hdf5(time_points=time_points,lat_points=lat_points, lon_points=lon_points, 

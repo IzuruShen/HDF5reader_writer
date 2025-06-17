@@ -84,11 +84,11 @@ class NetCDF_HDF_Base(BinaryBasedReaderWriter):
         """获取局部属性"""
         pass
     
-    def write_meteo_data(self, time_points: int, lat_points: int, lon_points: int,
-                        lat_min: float = -90, lat_max: float = 90,
-                        lon_min: float = -180, lon_max: float = 180,
-                        time_values: Optional[np.ndarray] = None,
-                        dic_data: Optional[Dict[str, Dict[str, Any]]] = None):
+    def write_meteo_data(self, time_points: int, lat_points: int, lon_points: int, 
+                         lat_min: float = -90, lat_max: float = 90, 
+                         lon_min: float = -180, lon_max: float = 180, 
+                         time_values: Optional[np.ndarray] = None, 
+                         dic_data: Optional[Dict[str, Dict[str, Any]]] = None):
         """写入气象数据 """
         pass
 
@@ -155,14 +155,14 @@ class HDF5ReaderWriter(NetCDF_HDF_Base):
             status="STARTED",
             message=f"File: {self.__file_path}, Dimensions: "
                     f"Variables: {list(data.keys())}"
-        )
+                    )
         if self.__mode != 'w':
             error_msg = "File must be opened in 'w' mode for writing"
             self._log_operation_sure(
                 operation=operation,
                 status="FAILED",
                 message=error_msg
-            )
+                )
             raise PermissionError(error_msg)
         
         # 写入全局属性
@@ -173,7 +173,7 @@ class HDF5ReaderWriter(NetCDF_HDF_Base):
         self._log_operation_sure(
             operation="Global attributes",
             status="NOTE"
-        )
+            )
             
         group = self.__dataset.create_group('Data')
             
@@ -181,40 +181,40 @@ class HDF5ReaderWriter(NetCDF_HDF_Base):
             operation="Group structure",
             status="NOTE",
             message="Created Data groups"
-        )
+            )
             
         # 遍历 dic_data，写入所有变量
         vars_written = []
         for var_name, var_info in data.items():
             try:
                 datum = var_info["data"]
-
+                
                 dset = group.create_dataset(var_name, data=datum)
-
+                
                 vars_written.append(var_name)               
                 self._log_operation_sure(
                     operation=f"Write variable {var_name}",
                     status="SUCCESS"
-                )
+                    )
             except KeyError as e:
                 self._log_operation_sure(
                     operation=f"Write variable {var_name}",
                     status="FAILED",
                     message=f"Missing required key: {str(e)}"
-                )
+                    )
                 raise
             except Exception as e:
                 self._log_operation_sure(
                     operation=f"Write variable {var_name}",
                     status="FAILED",
                     message=str(e)
-                )
+                    )
                 raise
         self._log_operation_sure(
             operation="Write meteorological data",
             status="SUCCESS",
             message=f"Variables written: {vars_written}"
-        )
+            )
         
     # 辅助方法：简化日志调用
     def _log_operation_sure(self, **kwargs):
@@ -244,7 +244,7 @@ class HDF5ReaderWriter(NetCDF_HDF_Base):
                     operation=operation,
                     status="STARTED",
                     message=f"File: {self.__file_path}"
-                )
+                    )
                 
                 # 如果是写入模式，先尝试删除现有文件
                 if self.__mode == 'w':
@@ -254,13 +254,13 @@ class HDF5ReaderWriter(NetCDF_HDF_Base):
                 self._log_operation_sure(
                     operation=operation,
                     status="SUCCESS"
-                )
+                    )
                 return
             except (FileNotFoundError, PermissionError, RuntimeError) as e:
                 e_dict={
                     FileNotFoundError: f"File not found: {self.__file_path}",
                     PermissionError: f"Permission error: {self.__file_path}",
-                    RuntimeError: f"Runtime error: {self.__file_path}",
+                    RuntimeError: f"Runtime error: {self.__file_path}"
                     }
                 message = e_dict.get(type(e), f"Unexpected error: {str(e)}")
                 self._log_operation_sure(
@@ -268,14 +268,14 @@ class HDF5ReaderWriter(NetCDF_HDF_Base):
                     status="RETRY",
                     message=message,
                     exception=e
-                )
+                    )
                 if attempt == max_retries - 1:
                     self._log_operation_sure(
                         operation="Open file",
                         status="FAILED",
                         message=f"Max retries exceeded after {max_retries} attempts",
                         exception=e
-                    )
+                        )
                     raise FileNotFoundError(f"File not found: {self.__file_path}") from e
             except Exception as e:
                 self._log_operation_sure(
@@ -283,14 +283,14 @@ class HDF5ReaderWriter(NetCDF_HDF_Base):
                     status="FAILED",
                     message=f"Unexpected {type(e).__name__}: {str(e)}",
                     exception=e
-                )
+                    )
                 if attempt == max_retries - 1:
                     self._log_operation_sure(
                         operation="Open file",
                         status="FAILED",
                         message=f"Max retries exceeded after {max_retries} attempts",
                         exception=e
-                    )
+                        )
                     raise
             time.sleep(retry_delay)  # 重试前等待..
     
@@ -301,20 +301,20 @@ class HDF5ReaderWriter(NetCDF_HDF_Base):
             operation=operation,
             status="STARTED",
             message=f"File: {self.__file_path}"
-        )
+            )
         if self.__dataset is not None:
             try:
                 self.__dataset.close()
                 self._log_operation_sure(
                     operation=operation,
                     status="SUCCESS"
-                )
+                    )
             except Exception as e:
                 self._log_operation_sure(
                     operation=operation,
                     status="FAILED",
                     message=f"Warning: Error closing HDF5 file: {e}"
-                )
+                    )
                 raise
             finally:
                 self.__dataset = None
@@ -339,7 +339,7 @@ class HDF5ReaderWriter(NetCDF_HDF_Base):
             operation="get dataset",
             status="STARTED",
             message=f"Group path: {group_path}"
-        )
+            )
         try:
             if self.__dataset is None:
                 self.__openhdf5(mode)
@@ -360,7 +360,7 @@ class HDF5ReaderWriter(NetCDF_HDF_Base):
                 operation=operation,
                 status="SUCCESS",
                 message=f"Type: {type(target).__name__}{shape_info}"
-            )
+                )
             
             return target
         except Exception as e:
@@ -369,19 +369,19 @@ class HDF5ReaderWriter(NetCDF_HDF_Base):
                 status="FAILED",
                 message="Error: {type(e).__name__}: {str(e)}",
                 exception=e
-            )
+                )
             raise
     
     def get_variable_data(self, variable_name: str) -> np.ndarray:
         """
         读取 Observations 组中指定变量的数据值
-
+        
         参数:
             variable_name: 目标变量名称
-
+            
         返回:
             该变量的数据值
-
+            
         异常:
             ValueError: 如果指定变量不存在于数据集中
         """  
@@ -390,7 +390,7 @@ class HDF5ReaderWriter(NetCDF_HDF_Base):
             operation=operation,
             status="STARTED",
             message=f"File: {self.__file_path}"
-        )
+            )
         group_path = "Observations/" + variable_name
         try:
             dataset = self.get_dataset(group_path=group_path)
@@ -398,7 +398,7 @@ class HDF5ReaderWriter(NetCDF_HDF_Base):
             self._log_operation_sure(
                 operation=operation,
                 status="SUCCESS"
-            )
+                )
             return data
         except Exception as e:
             self._log_operation_sure(
@@ -406,7 +406,7 @@ class HDF5ReaderWriter(NetCDF_HDF_Base):
                 status="FAILED",
                 message=str(e),
                 exception=e  # 传递异常对象
-            )
+                )
             raise  # 重新抛出异常
     
     def get_global_attributes(self) -> Dict[str, Any]:
@@ -421,21 +421,21 @@ class HDF5ReaderWriter(NetCDF_HDF_Base):
             operation=operation,
             status="STARTED",
             message=f"File: {self.__file_path}"
-        )
+            )
         try:
             h5_file = self.get_dataset()
             attributes = dict(h5_file.attrs)
             self._log_operation_sure(
                 operation=operation,
-                status="SUCCESS",
-            )
+                status="SUCCESS"
+                )
             return attributes
         except Exception as e:
             self._log_operation_sure(
                 operation=operation,
                 status="FAILED",
                 message=f"{type(e).__name__}: {str(e)}"
-            )
+                )
             raise
     
     def get_local_attributes(self, dataset_name: str) -> Dict[str, Any]:
@@ -456,7 +456,7 @@ class HDF5ReaderWriter(NetCDF_HDF_Base):
             operation=operation,
             status="STARTED",
             message=f"File: {self.__file_path}"
-        )
+            )
         try:
             h5_file=self.get_dataset()
             obs_group = h5_file["Observations"]
@@ -466,7 +466,7 @@ class HDF5ReaderWriter(NetCDF_HDF_Base):
                     operation=operation,
                     status="SUCCESS",
                     message=f"attributes: {attributes.keys}"
-                )
+                    )
                 return attributes
             else:
                 raise ValueError(f"Dataset '{dataset_name}' not found in the Observations group.")
@@ -475,7 +475,7 @@ class HDF5ReaderWriter(NetCDF_HDF_Base):
                 operation=operation,
                 status="FAILED",
                 message=f"{type(e).__name__}: {str(e)}"
-            )
+                )
             raise
     
     def summary_meteorological(self):
@@ -485,7 +485,7 @@ class HDF5ReaderWriter(NetCDF_HDF_Base):
             operation=operation,
             status="STARTED",
             message=f"File: {self.__file_path}"
-        )
+            )
         try:
             print("全局属性：")
             ds = self.get_dataset()
@@ -496,14 +496,14 @@ class HDF5ReaderWriter(NetCDF_HDF_Base):
             print("\nObservations 组中的数据集：", list(obs_group.keys()))
             self._log_operation_sure(
                 operation=operation,
-                status="SUCCESS",
-            )
+                status="SUCCESS"
+                )
         except Exception as e:
             self._log_operation_sure(
                 operation=operation,
                 status="FAILED",
                 message=f"{type(e).__name__}: {str(e)}"
-            )
+                )
             raise
     
     # 气象数据写入方法
@@ -537,14 +537,14 @@ class HDF5ReaderWriter(NetCDF_HDF_Base):
             message=f"File: {self.__file_path}, Dimensions: "
                     f"time={time_points},lat={lat_points}, lon={lon_points} | "
                     f"Variables: {list(dic_data.keys()) if dic_data else 'None'}"
-        )
+                    )
         if self.__mode != 'w':
             error_msg = "File must be opened in 'w' mode for writing"
             self._log_operation_sure(
                 operation=operation,
                 status="FAILED",
                 message=error_msg
-            )
+                )
             raise PermissionError(error_msg)
         try:
             if dic_data is None:
@@ -553,7 +553,7 @@ class HDF5ReaderWriter(NetCDF_HDF_Base):
                     operation="Parameter check",
                     status="INFO",
                     message="dic_data is None, initialized as empty dict"
-                )
+                    )
             
             # 检查文件是否已打开
             if self.__dataset is None:
@@ -570,14 +570,14 @@ class HDF5ReaderWriter(NetCDF_HDF_Base):
                         operation="Time values generation",
                         status="NOTE",
                         message=f"Auto-generated time values (0 to {time_points-1})"
-                    )
+                        )
                 elif len(time_values) != time_points:
                     error_msg = "time_values length must match time_points"
                     self._log_operation_sure(
                         operation="Parameter validation",
                         status="FAILED",
                         message=error_msg
-                    )
+                        )
                     raise ValueError(error_msg)
                     
             # 生成经纬度数据
@@ -587,7 +587,7 @@ class HDF5ReaderWriter(NetCDF_HDF_Base):
                     operation="Parameter validation",
                     status="FAILED",
                     message=error_msg
-                )
+                    )
                 raise ValueError(error_msg)
             if not (isinstance(lat_points, int) and isinstance(lon_points, int) and isinstance(time_points, int)):
                 error_msg = "lat_points, lon_points and time_points must be integers"
@@ -595,7 +595,7 @@ class HDF5ReaderWriter(NetCDF_HDF_Base):
                     operation="Parameter validation",
                     status="FAILED",
                     message=error_msg
-                )
+                    )
                 raise TypeError(error_msg)
             if lat_min >= lat_max or lon_min >= lon_max:
                 error_msg = "lat_min must be < lat_max and lon_min must be < lon_max"
@@ -603,7 +603,7 @@ class HDF5ReaderWriter(NetCDF_HDF_Base):
                     operation="Parameter validation",
                     status="FAILED",
                     message=error_msg
-                )
+                    )
                 raise ValueError(error_msg)
             
             try:
@@ -613,14 +613,14 @@ class HDF5ReaderWriter(NetCDF_HDF_Base):
                     operation="Coordinate generation",
                     status="SUCCESS",
                     message=f"Generated {lat_points}x{lon_points} grid"
-                )
+                    )
             except TypeError as e:
                 error_msg = f"Input must be numeric: {str(e)}"
                 self._log_operation_sure(
                     operation="Coordinate generation",
                     status="FAILED",
                     message=error_msg
-                )
+                    )
                 raise TypeError(error_msg)
             
             # 写入全局属性
@@ -631,7 +631,7 @@ class HDF5ReaderWriter(NetCDF_HDF_Base):
             self._log_operation_sure(
                 operation="Global attributes",
                 status="NOTE"
-            )
+                )
             
             # 创建组结构
             obs_group = self.__dataset.create_group('Observations')
@@ -650,7 +650,7 @@ class HDF5ReaderWriter(NetCDF_HDF_Base):
                 operation="Group structure",
                 status="NOTE",
                 message="Created Observations/Coordinates groups"
-            )
+                )
                 
             # 遍历 dic_data，写入所有变量
             vars_written = []
@@ -661,7 +661,7 @@ class HDF5ReaderWriter(NetCDF_HDF_Base):
                         operation=f"Write variable {var_name}",
                         status="FAILED",
                         message=error_msg
-                    )
+                        )
                     raise ValueError(error_msg)
                 try:
                     data = var_info["data"]
@@ -669,19 +669,18 @@ class HDF5ReaderWriter(NetCDF_HDF_Base):
                     description = var_info.get("description", "no description")
                     
                     expected_shape_3d = (time_points, lat_points, lon_points)
-    
                     if data.shape != expected_shape_3d:
                         error_msg = (
                             f"Data shape mismatch for {var_name}: "
                             f"expected {expected_shape_3d}, got {data.shape}"
-                        )
+                            )
                         self._log_operation_sure(
                             operation=f"Write variable {var_name}",
                             status="FAILED",
                             message=error_msg
-                        )
+                            )
                         raise ValueError(error_msg)
-    
+                    
                     dset = obs_group.create_dataset(var_name, data=data)
                     dset.attrs["units"] = units
                     dset.attrs["description"] = description
@@ -691,32 +690,32 @@ class HDF5ReaderWriter(NetCDF_HDF_Base):
                         operation=f"Write variable {var_name}",
                         status="SUCCESS",
                         message=f"Shape: {data.shape}, Units: {units}"
-                    )
+                        )
                 except KeyError as e:
                     self._log_operation_sure(
                         operation=f"Write variable {var_name}",
                         status="FAILED",
                         message=f"Missing required key: {str(e)}"
-                    )
+                        )
                     raise
                 except Exception as e:
                     self._log_operation_sure(
                         operation=f"Write variable {var_name}",
                         status="FAILED",
                         message=str(e)
-                    )
+                        )
                     raise
             self._log_operation_sure(
                 operation=operation,
                 status="SUCCESS",
                 message=f"Variables written: {vars_written}"
-            )
+                )
         except Exception as e:
             self._log_operation_sure(
                 operation=operation,
                 status="FAILED",
                 message=str(e)
-            )
+                )
             raise
     
     def append_meteo_hdf5(self, time_points: int, lat_points: int, lon_points: int,
@@ -748,14 +747,14 @@ class HDF5ReaderWriter(NetCDF_HDF_Base):
             message=f"File: {self.__file_path}, Dimensions: "
                     f"time={time_points},lat={lat_points}, lon={lon_points} | "
                     f"Variables: {list(dic_data.keys()) if dic_data else 'None'}"
-        )
+            )
         if self.__mode != 'a':
             error_msg = "File must be opened in 'a' mode for appending"
             self._log_operation_sure(
                 operation=operation,
                 status="FAILED",
                 message=error_msg
-            )
+                )
             raise PermissionError(error_msg)
         try:
             if dic_data is None:
@@ -764,7 +763,7 @@ class HDF5ReaderWriter(NetCDF_HDF_Base):
                     operation="Parameter check",
                     status="NOTE",
                     message="dic_data is None, initialized as empty dict"
-                )
+                    )
             
             # 检查文件是否已打开
             if self.__dataset is None:
@@ -791,16 +790,15 @@ class HDF5ReaderWriter(NetCDF_HDF_Base):
                         operation=f"Append variable {var_name}",
                         status="FAILED",
                         message=error_msg
-                    )
+                        )
                     raise ValueError(error_msg)
                 
                 try:  
                     data = var_info["data"]
                     units = var_info.get("units", "unknown")
                     description = var_info.get("description", "no description")
-    
+                    
                     expected_shape_3d = (time_points, lat_points, lon_points)
-    
                     if data.shape != expected_shape_3d:
                         error_msg = f"Data shape mismatch for {var_name}: "\
                                     f"expected ({lat_points}, {lon_points}), got {data.shape}"
@@ -808,7 +806,7 @@ class HDF5ReaderWriter(NetCDF_HDF_Base):
                             operation=f"Append variable {var_name}",
                             status="FAILED",
                             message=error_msg
-                        )
+                            )
                         raise ValueError(error_msg)
                     
                     if var_name in obs_group:
@@ -817,7 +815,7 @@ class HDF5ReaderWriter(NetCDF_HDF_Base):
                             operation=f"Append variable {var_name}",
                             status="NOTE",
                             message="Existing dataset deleted before append"
-                        )
+                            )
                         
                     dset = obs_group.create_dataset(var_name, data=data)
                     dset.attrs["units"] = units
@@ -828,32 +826,32 @@ class HDF5ReaderWriter(NetCDF_HDF_Base):
                         operation=f"Append variable {var_name}",
                         status="SUCCESS",
                         message=f"Shape: {data.shape}, Units: {units}"
-                    )
+                        )
                 except KeyError as e:
                     self._log_operation_sure(
                         operation=f"Append variable {var_name}",
                         status="FAILED",
                         message=f"Missing required key '{e.args[0]}' in variable '{var_name}'"
-                    )
+                        )
                     raise 
                 except Exception as e:
                     self._log_operation_sure(
                         operation=f"Append variable {var_name}",
                         status="FAILED",
                         message=str(e)
-                    )
+                        )
                     raise 
             self._log_operation_sure(
                 operation=operation,
                 status="SUCCESS",
                 message=f"Variables appended: {vars_appended}"
-            )
+                )
         except Exception as e:
             self._log_operation_sure(
                 operation=operation,
                 status="FAILED",
                 message=str(e)
-            )
+                )
             raise
 
 
@@ -886,11 +884,11 @@ class NetCDF4ReaderWriter(NetCDF_HDF_Base):
         """获取局部属性"""
         pass
     
-    def write_meteo_data(self, time_points: int, lat_points: int, lon_points: int,
-                        lat_min: float = -90, lat_max: float = 90,
-                        lon_min: float = -180, lon_max: float = 180,
-                        time_values: Optional[np.ndarray] = None,
-                        dic_data: Optional[Dict[str, Dict[str, Any]]] = None):
+    def write_meteo_data(self, time_points: int, lat_points: int, lon_points: int, 
+                         lat_min: float = -90, lat_max: float = 90, 
+                         lon_min: float = -180, lon_max: float = 180, 
+                         time_values: Optional[np.ndarray] = None, 
+                         dic_data: Optional[Dict[str, Dict[str, Any]]] = None):
         """写入气象数据 """
         pass
 
@@ -977,111 +975,3 @@ with HDF5ReaderWriter("D://test//hdf5_test_3.h5", 'w') as h5file:
     h5file.write_meteo_hdf5(time_points=time_points,lat_points=lat_points, lon_points=lon_points, 
                             lat_min=-60, lat_max=-30, lon_min=30, lon_max=60, 
                             time_values=None, dic_data=dic_data)
-
-# 测试DataTransformer
-with HDF5ReaderWriter("D://test//hdf5_test_3.h5") as hdf5_reader:
-    transformer = hdf5_reader.pdtransform
-    
-    # 测试to_dataframe
-    df_all, attrs_all = transformer.to_dataframe(include_attrs=True)
-    print("All variables DataFrame shape:", df_all.shape)
-    print("Attributes keys:", attrs_all.keys())
-    
-    # 测试selected_to_dataframe
-    df_selected = transformer.selected_to_dataframe(['Temperature', 'Humidity'])
-    print("\nSelected variables DataFrame shape:", df_selected.shape)
-    
-    # 测试variable_to_series
-    temp_series = transformer.variable_to_series('Temperature')
-    print("\nTemperature Series:\n", temp_series.head())
-
-# 测试DataPreprocessor
-with HDF5ReaderWriter("D://test//hdf5_test_3.h5") as hdf5_reader:
-    preprocessor = hdf5_reader.datacleaner
-    
-    # 测试temperature_cleaner
-    cleaned_temp = preprocessor.temperature_cleaner(
-        'Temperature',
-        temperature_min_threshold=-20,
-        temperature_max_threshold=40,
-        fill_nat=True
-    )
-    print("Cleaned Temperature:\n", cleaned_temp.head())
-    
-    # 测试wind_speed_cleaner
-    cleaned_wind = preprocessor.wind_speed_cleaner(
-        'WindSpeed',
-        wind_speed_threshold=10,
-        fill_nat=True
-    )
-    print("\nCleaned Wind Speed:\n", cleaned_wind.head())
-
-# 测试DataAnalyzer
-with HDF5ReaderWriter("D://test//hdf5_test_3.h5") as hdf5_reader:
-    analyzer = hdf5_reader.dataanalyzer
-    
-    # 测试get_variable_slice
-    temp_slice = analyzer.get_variable_slice(
-        'Temperature',
-        time_slice=slice(0,1),
-        lat_slice=slice(0,3),
-        lon_slice=slice(0,3)
-    )
-    print("Temperature slice:\n", temp_slice)
-    
-    # 测试统计方法
-    temp_mean = analyzer.get_mean('Temperature')
-    temp_max = analyzer.get_max('Temperature')
-    print(f"\nTemperature mean: {temp_mean:.2f}, max: {temp_max:.2f}")
-    
-    # 测试相关性分析
-    corr = analyzer.calculate_temporal_correlation('Temperature', 'Humidity')
-    print(f"\nTemperature-Humidity correlation: {corr:.2f}")
-
-# 测试TimeResampler
-with HDF5ReaderWriter("D://test//hdf5_test_3.h5") as hdf5_reader:
-    resampler = hdf5_reader.timeresampler
-    
-    # 测试resample_time
-    daily_temp = resampler.resample_time('Temperature', 'D')
-    print("Daily resampled Temperature:\n", daily_temp)
-    
-    # 测试resample_multi_vars
-    daily_data = resampler.resample_multi_vars(
-        ['Temperature', 'Humidity'], 
-        'D',
-        method={'Temperature': 'mean', 'Humidity': 'max'}
-    )
-    print("\nDaily resampled data:")
-    for var, df in daily_data.items():
-        print(f"{var} shape: {df.shape}")
-
-# 测试DataFilter
-with HDF5ReaderWriter("D://test//hdf5_test_3.h5") as hdf5_reader:
-    data_filter = hdf5_reader.datafilier
-    
-    # 加载数据
-    df = data_filter.load_data(['Temperature', 'Humidity'])
-    
-    # 测试filter_by_condition
-    hot_days = data_filter.filter_by_condition(
-        df, 'Temperature', '>', 30
-    )
-    print(f"Days with temperature >30°C: {len(hot_days)}")
-    
-    # 测试filter_by_query
-    humid_hot = data_filter.filter_by_query(
-        df, 'Temperature > 25 and Humidity > 70'
-    )
-    print(f"Hot and humid days: {len(humid_hot)}")
-
-# 测试Converter
-converter = DataConverter()
-
-# 温度转换
-temp_k = converter.convert_temperature(25, from_unit="°C", to_unit="K")
-print(f"25°C in Kelvin: {temp_k:.2f}")
-
-# 气压转换
-pressure_pa = converter.convert_pressure(1013.25, from_unit="hPa", to_unit="Pa")
-print(f"1013.25 hPa in Pa: {pressure_pa}")
