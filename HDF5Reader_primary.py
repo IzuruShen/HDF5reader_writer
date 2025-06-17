@@ -252,7 +252,7 @@ class HDF5reader_writer:
         longitudes = np.linspace(lon_min, lon_max, lon_points)
         
         # 写入坐标
-        coord_group.create_dataset('Time', data=time_values if time_values is not None else np.arange(time_points))
+        coord_group.create_dataset('Time', data=time_values, dtype='int64')  # 明确指定数据类型
         coord_group.create_dataset('Latitude', data=latitudes)
         coord_group.create_dataset('Longitude', data=longitudes)
              
@@ -384,7 +384,7 @@ dic_data = {
 with HDF5reader_writer("D:/test/hdf5_test_1.h5", 'w') as h5file:
     h5file.write_meteo_hdf5(time_points=time_points,lat_points=lat_points, lon_points=lon_points, 
                             lat_min=-60, lat_max=-30, lon_min=30, lon_max=60, 
-                            time_values=None, dic_data=dic_data)
+                            time_values=times_value, dic_data=dic_data)
     
 with HDF5reader_writer("D:/test/hdf5_test_1.h5", 'r') as h5file:
     print(f'global attributes : {h5file.get_global_attributes()}')
@@ -415,7 +415,7 @@ dic_data = {
 with HDF5reader_writer("D:/test/hdf5_test_1.h5", 'a') as h5file:
     h5file.append_meteo_hdf5(time_points=time_points,lat_points=lat_points, lon_points=lon_points, 
                              lat_min=-60, lat_max=-30, lon_min=30, lon_max=60, 
-                             time_values=None, dic_data=dic_data)
+                             time_values=times_value, dic_data=dic_data)
 
 with HDF5reader_writer("D:/test/hdf5_test_1.h5", 'r') as h5file:
     print(f'Wind speed data : {h5file.get_variable_data("WindSpeed")}')

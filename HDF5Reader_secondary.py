@@ -479,7 +479,7 @@ class HDF5reader_writer:
             longitudes = np.linspace(lon_min, lon_max, lon_points)
             
             # 写入坐标
-            coord_group.create_dataset('Time', data=time_values if time_values is not None else np.arange(time_points))
+            coord_group.create_dataset('Time', data=time_values)
             coord_group.create_dataset('Latitude', data=latitudes)
             coord_group.create_dataset('Longitude', data=longitudes)
             
@@ -756,8 +756,8 @@ with HDF5reader_writer("D://test//hdf5_test_2.h5") as hdf5_reader:
     # 测试temperature_cleaner
     cleaned_temp = preprocessor.temperature_cleaner(
         'Temperature',
-        temperature_min_threshold=-20,
-        temperature_max_threshold=40,
+        temperature_min_threshold=-10,
+        temperature_max_threshold=30,
         fill_nat=True
         )
     print("Cleaned Temperature:\n", cleaned_temp.head())

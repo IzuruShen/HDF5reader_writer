@@ -642,7 +642,7 @@ class HDF5ReaderWriter(NetCDF_HDF_Base):
             longitudes = np.linspace(lon_min, lon_max, lon_points)
             
             # 写入坐标
-            coord_group.create_dataset('Time', data=time_values if time_values is not None else np.arange(time_points))
+            coord_group.create_dataset('Time', data=time_values)
             coord_group.create_dataset('Latitude', data=latitudes)
             coord_group.create_dataset('Longitude', data=longitudes)
             
