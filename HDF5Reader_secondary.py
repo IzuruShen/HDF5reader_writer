@@ -8,10 +8,10 @@ import h5py as h5
 import numpy as np
 from datetime import datetime
 import time
-from typing import Optional, Dict, Any  # 确保所有需要的类型提示都已导入
+from typing import Literal, Optional, Dict, Any  # 确保所有需要的类型提示都已导入
 from components import DataTransformer, DataConverter, Logger, DataPreprocessor, DataAnalyzer, TimeResampler, DataFilter
 import os
-
+ 
 def safe_remove_file(filepath, max_retries=5, retry_delay=1):
     """安全删除文件，带有重试机制"""
     for attempt in range(max_retries):
@@ -27,12 +27,16 @@ def safe_remove_file(filepath, max_retries=5, retry_delay=1):
 
 class HDF5reader_writer:
     """
-    HDF5读写器，支持'r','w''a'模式
+    HDF5读写器，仅支持'r','w''a'模式
     支持读入 Observations 组中指定变量的数据和属性以及全局属性
     支持summary_meteorological,读取数据并打印全局属性的部分信息
     请尽可能使用with语句而不是实例化
     """
-    def __init__(self, file_path: str, mode: str ='r', enable_logging: bool = True):
+    def __init__(self, 
+                 file_path: str, 
+                 mode: Literal['r', 'w', 'a'] = 'r',  # 限定合法模式
+                 enable_logging: bool = True
+                 ) -> None:
         """
         初始化 HDF5Reader 实例，使用组合模式整合各功能模块
         

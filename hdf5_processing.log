@@ -2252,3 +2252,157 @@
 2025-06-17 23:18:43,904 - INFO - Filter data by query: Temperature > 25 and Humidity > 70 - SUCCESS: Filtered records: 7
 2025-06-17 23:18:43,904 - DEBUG - close - STARTED: File: D://test//hdf5_test_2.h5
 2025-06-17 23:18:43,904 - INFO - close - SUCCESS
+2025-07-02 08:42:27,508 - DEBUG - Open HDF5 file - STARTED: File: D://test//hdf5_test_2.h5
+2025-07-02 08:42:27,516 - INFO - Open HDF5 file - SUCCESS
+2025-07-02 08:42:27,516 - DEBUG - Write meteorological data - STARTED: File: D://test//hdf5_test_2.h5, Dimensions: time=2,lat=6, lon=6 | Variables: ['Temperature', 'Humidity', 'Pressure', 'WindSpeed', 'WindDirection']
+2025-07-02 08:42:27,516 - INFO - Time values generation - NOTE: Auto-generated time values (0 to 1)
+2025-07-02 08:42:27,516 - INFO - Coordinate generation - SUCCESS: Generated 6x6 grid
+2025-07-02 08:42:27,521 - INFO - Global attributes - NOTE
+2025-07-02 08:42:27,527 - INFO - Group structure - NOTE: Created Observations/Coordinates groups
+2025-07-02 08:42:27,527 - INFO - Write variable Temperature - SUCCESS: Shape: (2, 6, 6), Units: °C
+2025-07-02 08:42:27,527 - INFO - Write variable Humidity - SUCCESS: Shape: (2, 6, 6), Units: %
+2025-07-02 08:42:27,527 - INFO - Write variable Pressure - SUCCESS: Shape: (2, 6, 6), Units: hPa
+2025-07-02 08:42:27,532 - INFO - Write variable WindSpeed - SUCCESS: Shape: (2, 6, 6), Units: m/s
+2025-07-02 08:42:27,532 - INFO - Write variable WindDirection - SUCCESS: Shape: (2, 6, 6), Units: °
+2025-07-02 08:42:27,532 - INFO - Write meteorological data - SUCCESS: Variables written: ['Temperature', 'Humidity', 'Pressure', 'WindSpeed', 'WindDirection']
+2025-07-02 08:42:27,532 - DEBUG - close - STARTED: File: D://test//hdf5_test_2.h5
+2025-07-02 08:42:27,532 - INFO - close - SUCCESS
+2025-07-02 08:42:27,532 - DEBUG - Open HDF5 file - STARTED: File: D://test//hdf5_test_2.h5
+2025-07-02 08:42:27,536 - INFO - Open HDF5 file - SUCCESS
+2025-07-02 08:42:27,536 - DEBUG - Convert to DataFrame - STARTED: Include attributes: True
+2025-07-02 08:42:27,536 - DEBUG - Get dataset/Observations - STARTED: Group path: Observations
+2025-07-02 08:42:27,537 - INFO - Get dataset/Observations - SUCCESS: Type: Group
+2025-07-02 08:42:27,558 - INFO - Processing variable Humidity - SUCCESS
+2025-07-02 08:42:27,558 - INFO - Processing variable Pressure - SUCCESS
+2025-07-02 08:42:27,560 - INFO - Processing variable Temperature - SUCCESS
+2025-07-02 08:42:27,560 - INFO - Processing variable WindDirection - SUCCESS
+2025-07-02 08:42:27,560 - INFO - Processing variable WindSpeed - SUCCESS
+2025-07-02 08:42:27,564 - INFO - Convert to DataFrame - SUCCESS: Converted 5 variables to DataFrame
+2025-07-02 08:42:27,564 - DEBUG - Convert selected variables to DataFrame: ['Temperature', 'Humidity'] - STARTED: Include attributes: False
+2025-07-02 08:42:27,564 - DEBUG - Get dataset/Observations - STARTED: Group path: Observations
+2025-07-02 08:42:27,564 - INFO - Get dataset/Observations - SUCCESS: Type: Group
+2025-07-02 08:42:27,569 - DEBUG - Processing variable Temperature - STARTED
+2025-07-02 08:42:27,569 - INFO - Processing variable Temperature - SUCCESS
+2025-07-02 08:42:27,569 - DEBUG - Processing variable Humidity - STARTED
+2025-07-02 08:42:27,569 - INFO - Processing variable Humidity - SUCCESS
+2025-07-02 08:42:27,569 - INFO - Convert selected variables to DataFrame: ['Temperature', 'Humidity'] - SUCCESS: Converted 2 variables to DataFrame
+2025-07-02 08:42:27,569 - DEBUG - Convert variable Temperature to Series - STARTED: var: Temperature
+2025-07-02 08:42:27,571 - DEBUG - Get dataset/Observations - STARTED: Group path: Observations
+2025-07-02 08:42:27,571 - INFO - Get dataset/Observations - SUCCESS: Type: Group
+2025-07-02 08:42:27,574 - INFO - Convert variable Temperature to Series - SUCCESS
+2025-07-02 08:42:27,574 - DEBUG - close - STARTED: File: D://test//hdf5_test_2.h5
+2025-07-02 08:42:27,574 - INFO - close - SUCCESS
+2025-07-02 08:42:27,574 - DEBUG - Open HDF5 file - STARTED: File: D://test//hdf5_test_2.h5
+2025-07-02 08:42:27,574 - INFO - Open HDF5 file - SUCCESS
+2025-07-02 08:42:27,574 - DEBUG - Temperature cleaning - STARTED: Variable: Temperature, Thresholds: [-10, 30], Fill: linear
+2025-07-02 08:42:27,579 - DEBUG - Convert variable Temperature to Series - STARTED: var: Temperature
+2025-07-02 08:42:27,579 - DEBUG - Get dataset/Observations - STARTED: Group path: Observations
+2025-07-02 08:42:27,579 - INFO - Get dataset/Observations - SUCCESS: Type: Group
+2025-07-02 08:42:27,579 - INFO - Convert variable Temperature to Series - SUCCESS
+2025-07-02 08:42:27,585 - WARNING - Temperature cleaning - WARNING: Found 26 invalid values (36.1%) - Filled (linear)
+2025-07-02 08:42:27,587 - DEBUG - Wind_Speed cleaning - STARTED: Variable: WindSpeed, Thresholds: [0, 10], Fill: linear
+2025-07-02 08:42:27,587 - DEBUG - Convert variable WindSpeed to Series - STARTED: var: WindSpeed
+2025-07-02 08:42:27,587 - DEBUG - Get dataset/Observations - STARTED: Group path: Observations
+2025-07-02 08:42:27,587 - INFO - Get dataset/Observations - SUCCESS: Type: Group
+2025-07-02 08:42:27,589 - INFO - Convert variable WindSpeed to Series - SUCCESS
+2025-07-02 08:42:27,591 - INFO - Wind_Speed cleaning - SUCCESS: No invalid values found
+2025-07-02 08:42:27,591 - DEBUG - close - STARTED: File: D://test//hdf5_test_2.h5
+2025-07-02 08:42:27,593 - INFO - close - SUCCESS
+2025-07-02 08:42:27,593 - DEBUG - Open HDF5 file - STARTED: File: D://test//hdf5_test_2.h5
+2025-07-02 08:42:27,594 - INFO - Open HDF5 file - SUCCESS
+2025-07-02 08:42:27,594 - DEBUG - Get variable slice: Temperature - STARTED: Slices - time: slice(0, 1, None), lat: slice(0, 3, None), lon: slice(0, 3, None)
+2025-07-02 08:42:27,594 - DEBUG - Get dataset/Observations/Temperature - STARTED: Group path: Observations/Temperature
+2025-07-02 08:42:27,594 - INFO - Get dataset/Observations/Temperature - SUCCESS: Type: Dataset, shape: (2, 6, 6)
+2025-07-02 08:42:27,594 - DEBUG - Get dataset/Observations/Coordinates - STARTED: Group path: Observations/Coordinates
+2025-07-02 08:42:27,594 - INFO - Get dataset/Observations/Coordinates - SUCCESS: Type: Group
+2025-07-02 08:42:27,598 - INFO - Get variable slice: Temperature - SUCCESS: Result shape: (9, 1)
+2025-07-02 08:42:27,609 - DEBUG - Get mean: Temperature - STARTED: Slices - time: None, lat: None, lon: None
+2025-07-02 08:42:27,609 - DEBUG - Get variable slice: Temperature - STARTED: Slices - time: None, lat: None, lon: None
+2025-07-02 08:42:27,609 - DEBUG - Get dataset/Observations/Temperature - STARTED: Group path: Observations/Temperature
+2025-07-02 08:42:27,609 - INFO - Get dataset/Observations/Temperature - SUCCESS: Type: Dataset, shape: (2, 6, 6)
+2025-07-02 08:42:27,609 - DEBUG - Get dataset/Observations/Coordinates - STARTED: Group path: Observations/Coordinates
+2025-07-02 08:42:27,609 - INFO - Get dataset/Observations/Coordinates - SUCCESS: Type: Group
+2025-07-02 08:42:27,611 - INFO - Get variable slice: Temperature - SUCCESS: Result shape: (72, 1)
+2025-07-02 08:42:27,613 - INFO - Get mean: Temperature - SUCCESS: mean value: 11.0933
+2025-07-02 08:42:27,613 - DEBUG - Get maximum: Temperature - STARTED: Slices - time: None, lat: None, lon: None
+2025-07-02 08:42:27,613 - DEBUG - Get variable slice: Temperature - STARTED: Slices - time: None, lat: None, lon: None
+2025-07-02 08:42:27,613 - DEBUG - Get dataset/Observations/Temperature - STARTED: Group path: Observations/Temperature
+2025-07-02 08:42:27,613 - INFO - Get dataset/Observations/Temperature - SUCCESS: Type: Dataset, shape: (2, 6, 6)
+2025-07-02 08:42:27,614 - DEBUG - Get dataset/Observations/Coordinates - STARTED: Group path: Observations/Coordinates
+2025-07-02 08:42:27,614 - INFO - Get dataset/Observations/Coordinates - SUCCESS: Type: Group
+2025-07-02 08:42:27,616 - INFO - Get variable slice: Temperature - SUCCESS: Result shape: (72, 1)
+2025-07-02 08:42:27,616 - INFO - Get maximum: Temperature - SUCCESS: maximum value: 38.9732
+2025-07-02 08:42:27,616 - DEBUG - Calculate pearson temporal correlation between Temperature and Humidity - STARTED
+2025-07-02 08:42:27,616 - DEBUG - Get variable slice: Temperature - STARTED: Slices - time: None, lat: None, lon: None
+2025-07-02 08:42:27,616 - DEBUG - Get dataset/Observations/Temperature - STARTED: Group path: Observations/Temperature
+2025-07-02 08:42:27,616 - INFO - Get dataset/Observations/Temperature - SUCCESS: Type: Dataset, shape: (2, 6, 6)
+2025-07-02 08:42:27,616 - DEBUG - Get dataset/Observations/Coordinates - STARTED: Group path: Observations/Coordinates
+2025-07-02 08:42:27,616 - INFO - Get dataset/Observations/Coordinates - SUCCESS: Type: Group
+2025-07-02 08:42:27,619 - INFO - Get variable slice: Temperature - SUCCESS: Result shape: (72, 1)
+2025-07-02 08:42:27,619 - DEBUG - Get variable slice: Humidity - STARTED: Slices - time: None, lat: None, lon: None
+2025-07-02 08:42:27,619 - DEBUG - Get dataset/Observations/Humidity - STARTED: Group path: Observations/Humidity
+2025-07-02 08:42:27,619 - INFO - Get dataset/Observations/Humidity - SUCCESS: Type: Dataset, shape: (2, 6, 6)
+2025-07-02 08:42:27,619 - DEBUG - Get dataset/Observations/Coordinates - STARTED: Group path: Observations/Coordinates
+2025-07-02 08:42:27,619 - INFO - Get dataset/Observations/Coordinates - SUCCESS: Type: Group
+2025-07-02 08:42:27,621 - INFO - Get variable slice: Humidity - SUCCESS: Result shape: (72, 1)
+2025-07-02 08:42:27,625 - INFO - Calculate pearson temporal correlation between Temperature and Humidity - SUCCESS: Correlation: -0.168
+2025-07-02 08:42:27,625 - DEBUG - close - STARTED: File: D://test//hdf5_test_2.h5
+2025-07-02 08:42:27,625 - INFO - close - SUCCESS
+2025-07-02 08:42:27,625 - DEBUG - Open HDF5 file - STARTED: File: D://test//hdf5_test_2.h5
+2025-07-02 08:42:27,625 - INFO - Open HDF5 file - SUCCESS
+2025-07-02 08:42:27,625 - DEBUG - Resample Temperature by D - STARTED: Method: mean, lat: None, lon: None
+2025-07-02 08:42:27,625 - DEBUG - Get variable slice: Temperature - STARTED: Slices - time: None, lat: None, lon: None
+2025-07-02 08:42:27,625 - DEBUG - Get dataset/Observations/Temperature - STARTED: Group path: Observations/Temperature
+2025-07-02 08:42:27,625 - INFO - Get dataset/Observations/Temperature - SUCCESS: Type: Dataset, shape: (2, 6, 6)
+2025-07-02 08:42:27,625 - DEBUG - Get dataset/Observations/Coordinates - STARTED: Group path: Observations/Coordinates
+2025-07-02 08:42:27,625 - INFO - Get dataset/Observations/Coordinates - SUCCESS: Type: Group
+2025-07-02 08:42:27,630 - INFO - Get variable slice: Temperature - SUCCESS: Result shape: (72, 1)
+2025-07-02 08:42:27,700 - INFO - Resample Temperature by D - SUCCESS: Resampled shape: (1, 36)
+2025-07-02 08:42:27,735 - DEBUG - Resample multiple variables by D - STARTED: Variables: ['Temperature', 'Humidity'], Method: {'Temperature': 'mean', 'Humidity': 'max'}
+2025-07-02 08:42:27,735 - INFO - Processing Temperature - PROGRESS: Method: mean
+2025-07-02 08:42:27,735 - DEBUG - Resample Temperature by D - STARTED: Method: mean, lat: None, lon: None
+2025-07-02 08:42:27,735 - DEBUG - Get variable slice: Temperature - STARTED: Slices - time: None, lat: None, lon: None
+2025-07-02 08:42:27,735 - DEBUG - Get dataset/Observations/Temperature - STARTED: Group path: Observations/Temperature
+2025-07-02 08:42:27,735 - INFO - Get dataset/Observations/Temperature - SUCCESS: Type: Dataset, shape: (2, 6, 6)
+2025-07-02 08:42:27,735 - DEBUG - Get dataset/Observations/Coordinates - STARTED: Group path: Observations/Coordinates
+2025-07-02 08:42:27,735 - INFO - Get dataset/Observations/Coordinates - SUCCESS: Type: Group
+2025-07-02 08:42:27,738 - INFO - Get variable slice: Temperature - SUCCESS: Result shape: (72, 1)
+2025-07-02 08:42:27,774 - INFO - Resample Temperature by D - SUCCESS: Resampled shape: (1, 36)
+2025-07-02 08:42:27,774 - INFO - Processing Humidity - PROGRESS: Method: max
+2025-07-02 08:42:27,774 - DEBUG - Resample Humidity by D - STARTED: Method: max, lat: None, lon: None
+2025-07-02 08:42:27,774 - DEBUG - Get variable slice: Humidity - STARTED: Slices - time: None, lat: None, lon: None
+2025-07-02 08:42:27,774 - DEBUG - Get dataset/Observations/Humidity - STARTED: Group path: Observations/Humidity
+2025-07-02 08:42:27,774 - INFO - Get dataset/Observations/Humidity - SUCCESS: Type: Dataset, shape: (2, 6, 6)
+2025-07-02 08:42:27,774 - DEBUG - Get dataset/Observations/Coordinates - STARTED: Group path: Observations/Coordinates
+2025-07-02 08:42:27,774 - INFO - Get dataset/Observations/Coordinates - SUCCESS: Type: Group
+2025-07-02 08:42:27,784 - INFO - Get variable slice: Humidity - SUCCESS: Result shape: (72, 1)
+2025-07-02 08:42:27,826 - INFO - Resample Humidity by D - SUCCESS: Resampled shape: (1, 36)
+2025-07-02 08:42:27,826 - INFO - Resample multiple variables by D - SUCCESS: Completed 2 variables
+2025-07-02 08:42:27,826 - DEBUG - close - STARTED: File: D://test//hdf5_test_2.h5
+2025-07-02 08:42:27,826 - INFO - close - SUCCESS
+2025-07-02 08:42:27,826 - DEBUG - Open HDF5 file - STARTED: File: D://test//hdf5_test_2.h5
+2025-07-02 08:42:27,826 - INFO - Open HDF5 file - SUCCESS
+2025-07-02 08:42:27,826 - DEBUG - Load data for filtering (using DataAnalyzer) - STARTED
+2025-07-02 08:42:27,826 - DEBUG - Get multiple variables slices - STARTED: Variables: ['Temperature', 'Humidity'], Slices - time: None, lat: None, lon: None
+2025-07-02 08:42:27,826 - INFO - Processing variable: Temperature - PROGRESS: Progress: 1/2
+2025-07-02 08:42:27,826 - DEBUG - Get variable slice: Temperature - STARTED: Slices - time: None, lat: None, lon: None
+2025-07-02 08:42:27,826 - DEBUG - Get dataset/Observations/Temperature - STARTED: Group path: Observations/Temperature
+2025-07-02 08:42:27,826 - INFO - Get dataset/Observations/Temperature - SUCCESS: Type: Dataset, shape: (2, 6, 6)
+2025-07-02 08:42:27,826 - DEBUG - Get dataset/Observations/Coordinates - STARTED: Group path: Observations/Coordinates
+2025-07-02 08:42:27,826 - INFO - Get dataset/Observations/Coordinates - SUCCESS: Type: Group
+2025-07-02 08:42:27,831 - INFO - Get variable slice: Temperature - SUCCESS: Result shape: (72, 1)
+2025-07-02 08:42:27,831 - INFO - Processing variable: Humidity - PROGRESS: Progress: 2/2
+2025-07-02 08:42:27,831 - DEBUG - Get variable slice: Humidity - STARTED: Slices - time: None, lat: None, lon: None
+2025-07-02 08:42:27,831 - DEBUG - Get dataset/Observations/Humidity - STARTED: Group path: Observations/Humidity
+2025-07-02 08:42:27,831 - INFO - Get dataset/Observations/Humidity - SUCCESS: Type: Dataset, shape: (2, 6, 6)
+2025-07-02 08:42:27,831 - DEBUG - Get dataset/Observations/Coordinates - STARTED: Group path: Observations/Coordinates
+2025-07-02 08:42:27,831 - INFO - Get dataset/Observations/Coordinates - SUCCESS: Type: Group
+2025-07-02 08:42:27,831 - INFO - Get variable slice: Humidity - SUCCESS: Result shape: (72, 1)
+2025-07-02 08:42:27,836 - INFO - Get multiple variables slices - SUCCESS: Total shape: (72, 2), Variables: ['Temperature', 'Humidity']
+2025-07-02 08:42:27,836 - INFO - Load data for filtering (using DataAnalyzer) - SUCCESS: Loaded data shape: (72, 2)
+2025-07-02 08:42:27,836 - DEBUG - Filter data by condition > 30 - STARTED
+2025-07-02 08:42:27,836 - INFO - Filter data by condition > 30 - SUCCESS: Filtered records: 14
+2025-07-02 08:42:27,836 - DEBUG - Filter data by query: Temperature > 25 and Humidity > 70 - STARTED
+2025-07-02 08:42:27,841 - INFO - Filter data by query: Temperature > 25 and Humidity > 70 - SUCCESS: Filtered records: 4
+2025-07-02 08:42:27,841 - DEBUG - close - STARTED: File: D://test//hdf5_test_2.h5
+2025-07-02 08:42:27,841 - INFO - close - SUCCESS
