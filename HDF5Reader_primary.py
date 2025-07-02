@@ -38,19 +38,31 @@ class HDF5reader_writer:
     请尽可能使用 with 语句进行数据读取而不是实例化，以防遗忘关闭文件
     """  
     
-    def __init__(self, 
-                 file_path: str, 
-                 mode: Literal['r', 'w', 'a'] = 'r',  # 限定合法模式
-                 ) -> None:
+    def __init__(
+            self, 
+            file_path: str, 
+            mode: Literal['r', 'w', 'a'] = 'r',  # 限定合法模式
+            cache_size: int = 1024**3,  # 默认1GB缓存
+            chunk_cache_w0: float = 0.75,  # 脏数据权重
+            chunk_cache_slots: Optional[int] = None
+            ) -> None:
         """
         初始化 HDF5Reader 实例，默认 dataset 为 None
         
         参数:
             file_path: HDF5 文件的路径
             mode: 打开方式
+            cache_size: 缓存大小（字节）
+            chunk_cache_w0: 0-1之间的值，0表示优先淘汰旧块
+            chunk_cache_slots: 哈希槽数量（None则自动计算）
         """
         self.__file_path = file_path
         self.__mode = mode
+        self.__cache_settings = {
+            'rdcc_nbytes': cache_size, 
+            'rdcc_w0': chunk_cache_w0, 
+            'rdcc_nslots': chunk_cache_slots or max(637, int(cache_size/8192)) # 最小637个槽（HDF5推荐值）
+            }
         self.__dataset = None    
     
     def __enter__(self):
@@ -87,7 +99,7 @@ class HDF5reader_writer:
             print("============================================\n")
     
     def __openhdf5(self):
-        """打开 HDF5 文件"""
+        """打开 HDF5 文件，带高级缓存配置"""
         max_retries = 5  # 最大重试次数
         retry_delay = 1  # 重试间隔(秒)
         # 定义异常类型与对应错误信息的映射
@@ -101,7 +113,13 @@ class HDF5reader_writer:
                 # 如果是写入模式，先尝试删除现有文件
                 if self.__mode == 'w':
                     safe_remove_file(self.__file_path)
-                self.__dataset = h5.File(self.__file_path, self.__mode)  # 获得file_path的句柄
+                self.__dataset = h5.File(
+                    self.__file_path,
+                    self.__mode,
+                    rdcc_nbytes=self.__cache_settings['rdcc_nbytes'],
+                    rdcc_w0=self.__cache_settings['rdcc_w0'],
+                    rdcc_nslots=self.__cache_settings['rdcc_nslots']
+                ) # 获得file_path的句柄
                 return
             except tuple(ERROR_MESSAGES.keys()) as e:
                 if attempt == max_retries - 1:
