@@ -12,7 +12,9 @@ import time
 import os
 import traceback
 from types import TracebackType
-from typing import Literal, Optional, Type
+from typing import Literal, Optional, Type, Union
+import dask.array as da
+import dask.dataframe as dd
 
 def safe_remove_file(filepath: str, max_retries: int = 5, retry_delay: int = 1):
     """安全删除文件，带有重试机制"""
@@ -97,7 +99,7 @@ class HDF5reader_writer:
             print("\nTraceback (most recent call last):")  # 异常堆栈（最近调用）
             traceback.print_tb(exc_tb)  # 打印 traceback 信息
             print("============================================\n")
-    
+        
     def __openhdf5(self):
         """打开 HDF5 文件，带高级缓存配置"""
         max_retries = 5  # 最大重试次数
@@ -220,7 +222,24 @@ class HDF5reader_writer:
         # 进入 'Observations' 组
         obs_group = ds['Observations']
         print("\nObservations 组中的数据集：", list(obs_group.keys()))
-    
+        
+    def get_optimal_chunks(self, data_shape: tuple, access_pattern: str = "auto") -> tuple:
+        """
+        智能分块推荐
+        
+        参数:
+            access_pattern: 
+                'time' - 时间序列分析优化
+                'space' - 空间区域分析优化 
+                'auto' - 自动平衡
+        """
+        if access_pattern == "time":
+            return (1, data_shape[1], data_shape[2])
+        elif access_pattern == "space":
+            return (data_shape[0], 64, 64)
+        else:  # auto
+            return tuple(max(1, s//10) for s in data_shape)
+
     def __check(self, mode, time_points, lat_points, lon_points, 
                 lat_min, lat_max, lon_min, lon_max):
         """检查写入数据是否合理"""
@@ -274,8 +293,15 @@ class HDF5reader_writer:
         coord_group.create_dataset('Latitude', data=latitudes)
         coord_group.create_dataset('Longitude', data=longitudes)
         
-    def __write_observation(self, expected_shape, group, dic_data, 
-                            chunks=None, compression="gzip", compression_opts=4):
+    def __write_observation(
+            self, 
+            expected_shape, 
+            group, 
+            dic_data, 
+            chunks, 
+            compression, 
+            compression_opts
+            ):
         """写入dic_data"""
         if not dic_data:
             return
@@ -309,10 +335,21 @@ class HDF5reader_writer:
             except Exception:
                 raise
         
-    def write_meteo_hdf5(self, time_points: int, lat_points: int, lon_points: int, 
-                         lat_min: float = -90, lat_max: float = 90, 
-                         lon_min: float = -180, lon_max: float = 180, 
-                         time_values = None, dic_data = None):
+    def write_meteo_hdf5(
+            self, 
+            time_points: int, 
+            lat_points: int, 
+            lon_points: int, 
+            lat_min: float = -90, 
+            lat_max: float = 90, 
+            lon_min: float = -180, 
+            lon_max: float = 180, 
+            time_values: Optional[np.ndarray] = None, 
+            dic_data: Optional[dict[str, dict[str, Union[np.ndarray, str]]]] = None, 
+            chunks: Optional[tuple] = None, 
+            compression: str = "gzip", 
+            compression_opts: int = 4
+            ):
         """
         创建一个 HDF5 文件或完全覆盖之前的文件，并写入数据
         所有变量均包含 units 和 description 属性。
@@ -350,11 +387,29 @@ class HDF5reader_writer:
         # 遍历 dic_data，写入所有变量
         expected_shape = (time_points, lat_points, lon_points)
         group = self.__dataset.require_group('Observations')
-        self.__write_observation(expected_shape, group, dic_data)
+        self.__write_observation(
+            expected_shape, 
+            group, 
+            dic_data, 
+            chunks=chunks or self.get_optimal_chunks((time_points, lat_points, lon_points)), 
+            compression=compression, 
+            compression_opts=compression_opts
+            )
     
-    def append_meteo_hdf5(self, time_points, lat_points, lon_points, 
-                          lat_min=-90, lat_max=90, lon_min=-180, lon_max=180, 
-                          time_values=None, dic_data=None):
+    def append_meteo_hdf5(
+            self, 
+            time_points: int, 
+            lat_points: int, 
+            lon_points: int, 
+            lat_min: float = -90, 
+            lat_max: float = 90, 
+            lon_min: float = -180, 
+            lon_max: float = 180, 
+            dic_data: Optional[dict[str, dict[str, Union[np.ndarray, str]]]] = None, 
+            chunks: Optional[tuple] = None, 
+            compression: str = "gzip", 
+            compression_opts: int = 4
+            ):
         """
         在一个已有的 HDF5 文件之上追加 Observations 内的数据，或创建一个 HDF5 文件并写入数据
         所有变量均包含 units 和 description 属性。
@@ -382,7 +437,24 @@ class HDF5reader_writer:
         # 遍历 dic_data，写入所有变量
         expected_shape = (time_points, lat_points, lon_points)
         group = self.__dataset.require_group('Observations')
-        self.__write_observation(expected_shape, group, dic_data)
+        self.__write_observation(
+            expected_shape, 
+            group, 
+            dic_data, 
+            chunks=chunks or self.get_optimal_chunks((time_points, lat_points, lon_points)), 
+            compression=compression, 
+            compression_opts=compression_opts
+            )
+    
+    def to_dask_array(self, var_name: str) -> "da.Array":
+        """转换为Dask数组"""
+        ds = self.get_dataset()["Observations"][var_name]
+        return da.from_array(ds, chunks=ds.chunks)
+    
+    def to_dask_dataframe(self, var_name: str) -> "dd.DataFrame":
+        """转换为Dask DataFrame（适合表格数据）"""
+        arr = self.to_dask_array(var_name)
+        return dd.from_dask_array(arr)
 
 # ---------------------- 实用案例 ----------------------
 # 规定经纬和时间网格点数
@@ -421,8 +493,8 @@ with HDF5reader_writer("D:/test/hdf5_test_1.h5", 'r') as h5file:
     print(f'Humidity data : {h5file.get_variable_data("Humidity")}')
     print(f'Temperature attributes : {h5file.get_local_attributes("Temperature")}')
 # 生成随机气象数据
-windspeed = np.abs(np.random.normal(3, 2, size=(time_points, lat_points, lon_points)))
-winddirection = np.random.uniform(low=0, high=360, size=(time_points, lat_points, lon_points))
+windspeed = np.abs(np.random.normal(3, 2, size = (time_points, lat_points, lon_points)))
+winddirection = np.random.uniform(low = 0, high = 360, size = (time_points, lat_points, lon_points))
 # 封装数据为指定格式 dict
 dic_data = {
     'WindSpeed': {
@@ -438,9 +510,9 @@ dic_data = {
     }
 # 追加数据
 with HDF5reader_writer("D:/test/hdf5_test_1.h5", 'a') as h5file:
-    h5file.append_meteo_hdf5(time_points=time_points,lat_points=lat_points, lon_points=lon_points, 
-                             lat_min=-60, lat_max=-30, lon_min=30, lon_max=60, 
-                             time_values=times_value, dic_data=dic_data)
+    h5file.append_meteo_hdf5(time_points = time_points,lat_points = lat_points, lon_points = lon_points, 
+                             lat_min = -60, lat_max = -30, lon_min = 30, lon_max = 60, 
+                             dic_data = dic_data)
 # 读取 HDF5 格式数据特征
 with HDF5reader_writer("D:/test/hdf5_test_1.h5", 'r') as h5file:
     print(f'Wind speed data : {h5file.get_variable_data("WindSpeed")}')
